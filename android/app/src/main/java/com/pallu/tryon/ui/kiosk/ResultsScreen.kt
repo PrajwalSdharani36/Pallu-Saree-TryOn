@@ -1,6 +1,10 @@
 package com.pallu.tryon.ui.kiosk
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,35 +12,40 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,24 +53,39 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pallu.tryon.data.SessionItem
-import com.pallu.tryon.ui.common.BigButton
 import com.pallu.tryon.ui.common.ErrorNote
 import com.pallu.tryon.ui.common.RemoteImage
 import com.pallu.tryon.ui.common.rupees
+import com.pallu.tryon.ui.theme.GoldBright
+import com.pallu.tryon.ui.theme.Kumkum
 import com.pallu.tryon.ui.theme.Mirror
+import com.pallu.tryon.ui.theme.MirrorLine
 import com.pallu.tryon.ui.theme.MirrorRaised
-import com.pallu.tryon.ui.theme.ZariBorder
+import com.pallu.tryon.ui.theme.MirrorRaised2
+import com.pallu.tryon.ui.theme.OnGold
+import com.pallu.tryon.ui.theme.OnMirror
+import com.pallu.tryon.ui.theme.OnMirrorFaint
+import com.pallu.tryon.ui.theme.OnMirrorMuted
+import com.pallu.tryon.ui.theme.Rozha
 import com.pallu.tryon.ui.theme.ZariLight
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.absoluteValue
 
 @Composable
 fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Unit) {
@@ -71,138 +95,144 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
     val pager = rememberPagerState(pageCount = { items.size })
     val scope = rememberCoroutineScope()
     var showOriginal by remember { mutableStateOf(false) }
+    val strip = rememberLazyListState()
+    LaunchedEffect(pager.currentPage) { if (items.isNotEmpty()) strip.animateScrollToItem(pager.currentPage.coerceAtMost(items.lastIndex)) }
 
-    Column(Modifier.fillMaxSize().background(Mirror)) {
-        ZariBorder()
-        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Your looks", style = MaterialTheme.typography.headlineLarge)
-                Text(
-                    when {
-                        session.done == session.total -> "All ${session.total} are ready. Tap the heart on the ones you love."
-                        else -> "${session.done} of ${session.total} ready. The rest appear as soon as they're draped."
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (session.done < session.total) {
-            LinearProgressIndicator(
-                progress = { if (session.total == 0) 0f else session.done.toFloat() / session.total },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                color = ZariLight,
-                trackColor = MirrorRaised,
-            )
-        }
-
-        HorizontalPager(
-            state = pager,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 16.dp),
-            pageSpacing = 20.dp,
-            key = { items[it].id },
-        ) { page ->
-            val item = items[page]
-            LookCard(
-                item = item,
-                original = state.photoPreview?.takeIf { showOriginal && page == pager.currentPage },
-                onRetry = { vm.retry(item) },
-                onHold = { showOriginal = it },
-            )
-        }
-
-        val current = items.getOrNull(pager.currentPage)
-        if (current != null) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(current.saree.name, style = MaterialTheme.typography.headlineSmall)
-                    Text(
-                        listOf(current.saree.fabric, rupees(current.saree.price)).filter { it.isNotBlank() }.joinToString(", "),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                FilledTonalButton(onClick = { vm.toggleFavorite(current) }, contentPadding = PaddingValues(horizontal = 22.dp, vertical = 14.dp)) {
-                    Icon(
-                        if (current.favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = null,
-                        tint = if (current.favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(if (current.favorite) "Shortlisted" else "Shortlist", style = MaterialTheme.typography.labelLarge)
-                }
-            }
-        }
-
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            itemsIndexed(items, key = { _, it -> it.id }) { index, item ->
-                val selected = index == pager.currentPage
-                Box(
-                    Modifier
-                        .size(width = 64.dp, height = 84.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .border(if (selected) 3.dp else 1.dp, if (selected) ZariLight else MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
-                        .clickable { scope.launch { pager.animateScrollToPage(index) } },
+    KioskPage {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val k = headlineSize(maxWidth)
+            val side = 56.dp * k.coerceAtLeast(0.6f)
+            Column(Modifier.fillMaxSize()) {
+                // ---- header
+                Row(
+                    Modifier.fillMaxWidth().padding(start = side, end = side, top = 34.dp * k),
+                    verticalAlignment = Alignment.Bottom,
                 ) {
-                    RemoteImage(item.resultUrl ?: item.saree.imageUrl, item.saree.name, Modifier.fillMaxSize())
-                    if (item.isWorking) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)))
-                    if (item.favorite) {
-                        Icon(
-                            Icons.Filled.Favorite, contentDescription = "Shortlisted",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(18.dp),
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Your looks", fontFamily = Rozha, fontSize = (54 * k).sp, lineHeight = (58 * k).sp, color = OnMirror)
+                        Muted(
+                            if (session.done == session.total) "All ${session.total} are ready. Swipe through and shortlist the ones you love."
+                            else "${session.done} of ${session.total} ready. The rest appear as soon as they're draped.",
+                            scale = 0.9f * k,
                         )
                     }
+                    if (items.isNotEmpty()) {
+                        Text("${pager.currentPage + 1} / ${items.size}", fontFamily = Rozha, fontSize = 30.sp, color = ZariLight)
+                    }
+                }
+                if (session.done < session.total) {
+                    ReadyBar(session.done, session.total, Modifier.padding(start = side, end = side, top = 14.dp))
+                }
+
+                // ---- the gallery: neighbours peek in, smaller and dimmer
+                val peek = (maxWidth * 0.16f).coerceIn(40.dp, 140.dp)
+                HorizontalPager(
+                    state = pager,
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 20.dp),
+                    contentPadding = PaddingValues(horizontal = peek, vertical = 6.dp),
+                    pageSpacing = 18.dp,
+                    key = { items[it].id },
+                ) { page ->
+                    val item = items[page]
+                    val offset = ((pager.currentPage - page) + pager.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f)
+                    LookCard(
+                        item = item,
+                        isCurrent = page == pager.currentPage,
+                        original = state.photoPreview?.takeIf { showOriginal && page == pager.currentPage },
+                        onRetry = { vm.retry(item) },
+                        onFavorite = { vm.toggleFavorite(item) },
+                        onHold = { showOriginal = it },
+                        modifier = Modifier.graphicsLayer {
+                            val s = lerp(1f, 0.86f, offset)
+                            scaleX = s
+                            scaleY = s
+                            alpha = lerp(1f, 0.42f, offset)
+                        },
+                    )
+                }
+
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 14.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.TouchApp, contentDescription = null, tint = OnMirrorMuted, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Press and hold the look to compare it with your photo", style = MaterialTheme.typography.bodyLarge, color = OnMirrorMuted)
+                }
+
+                // ---- thumbnails
+                LazyRow(
+                    state = strip,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = side, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                ) {
+                    itemsIndexed(items, key = { _, it -> it.id }) { index, item ->
+                        val selected = index == pager.currentPage
+                        Box(
+                            Modifier
+                                .size(72.dp, 94.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .border(if (selected) 3.dp else 1.dp, if (selected) ZariLight else MirrorLine, RoundedCornerShape(10.dp))
+                                .clickable { scope.launch { pager.animateScrollToPage(index) } }
+                                .alpha(if (selected) 1f else 0.72f),
+                        ) {
+                            RemoteImage(item.resultUrl ?: item.saree.imageUrl, item.saree.name, Modifier.fillMaxSize())
+                            if (item.isWorking) Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)))
+                            when {
+                                item.favorite -> Badge(Kumkum, Icons.Filled.Favorite, Modifier.align(Alignment.TopEnd).padding(5.dp), size = 22.dp, tint = Color.White)
+                                item.isDone -> Badge(ZariLight, Icons.Filled.Check, Modifier.align(Alignment.TopEnd).padding(5.dp), size = 20.dp)
+                            }
+                        }
+                    }
+                }
+
+                ErrorNote(state.error, Modifier.padding(horizontal = side))
+                Row(
+                    Modifier.fillMaxWidth().padding(start = side, end = side, bottom = 22.dp, top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlineButton("Retake photo", { vm.setPhoto(null); onRetake() })
+                    Spacer(Modifier.weight(1f))
+                    GoldButton(
+                        text = if (state.finishing) "Deleting your photos…" else "I'm done",
+                        onClick = { vm.finish(onFinished) },
+                        enabled = !state.finishing,
+                        modifier = Modifier.widthIn(min = 220.dp),
+                    )
                 }
             }
         }
+    }
+}
 
-        ErrorNote(state.error, Modifier.padding(horizontal = 24.dp))
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedButton(onClick = { vm.setPhoto(null); onRetake() }, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
-                Text("Retake photo", style = MaterialTheme.typography.labelLarge)
-            }
-            Spacer(Modifier.weight(1f))
-            BigButton(
-                text = if (state.finishing) "Deleting your photos…" else "I'm done",
-                onClick = { vm.finish(onFinished) },
-                enabled = !state.finishing,
-                modifier = Modifier.widthIn(min = 220.dp),
-            )
-        }
-        Text(
-            "Press and hold a look to compare it with your photo. Tapping I'm done deletes your photo and these looks.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 24.dp, end = 24.dp),
-        )
-        ZariBorder()
+@Composable
+private fun ReadyBar(done: Int, total: Int, modifier: Modifier = Modifier) {
+    val target = if (total == 0) 0f else done.toFloat() / total
+    val p by animateFloatAsState(target, tween(600), label = "ready")
+    Box(modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(MirrorRaised2)) {
+        Box(Modifier.fillMaxWidth(p).height(8.dp).clip(RoundedCornerShape(4.dp)).background(ZariLight))
     }
 }
 
 @Composable
 private fun LookCard(
     item: SessionItem,
+    isCurrent: Boolean,
     original: android.graphics.Bitmap?,
     onRetry: () -> Unit,
+    onFavorite: () -> Unit,
     onHold: (Boolean) -> Unit,
+    modifier: Modifier,
 ) {
     Box(
-        Modifier
+        modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(18.dp))
+            .shadow(24.dp, RoundedCornerShape(26.dp))
+            .clip(RoundedCornerShape(26.dp))
             .background(MirrorRaised)
+            .border(if (isCurrent) 2.dp else 0.dp, ZariLight.copy(alpha = if (isCurrent) 0.55f else 0f), RoundedCornerShape(26.dp))
             .pointerInput(item.id) {
                 detectTapGestures(onPress = {
                     onHold(true)
@@ -210,37 +240,157 @@ private fun LookCard(
                     onHold(false)
                 })
             },
-        contentAlignment = Alignment.Center,
     ) {
-        when {
-            original != null -> Image(original.asImageBitmap(), "Your original photo", Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
-            item.isDone -> RemoteImage(item.resultUrl, "You wearing ${item.saree.name}", Modifier.fillMaxSize(), ContentScale.Fit)
-            item.isFailed -> Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                RemoteImage(item.saree.imageUrl, item.saree.name, Modifier.size(160.dp).clip(RoundedCornerShape(12.dp)))
-                Spacer(Modifier.size(16.dp))
-                Text("We couldn't drape this one.", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                Text(
-                    "This sometimes happens with unusual photos. Try once more.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.size(12.dp))
-                BigButton("Try again", onRetry)
+        // A finished look fades in over the draping state.
+        Crossfade(targetState = item.isDone, animationSpec = tween(700), label = "reveal") { done ->
+            when {
+                original != null -> Image(original.asImageBitmap(), "Your original photo", Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                done -> RemoteImage(item.resultUrl, "You wearing ${item.saree.name}", Modifier.fillMaxSize(), ContentScale.Crop)
+                item.isFailed -> Failed(item, onRetry)
+                else -> Draping(item)
             }
-            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                RemoteImage(item.saree.imageUrl, item.saree.name, Modifier.fillMaxSize().alpha(0.35f))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.size(84.dp).clip(CircleShape).background(Mirror.copy(alpha = 0.7f)), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = ZariLight)
-                    }
-                    Spacer(Modifier.size(16.dp))
-                    Text(
-                        if (item.status == "running") "Draping ${item.saree.name}…" else "Waiting to drape ${item.saree.name}…",
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 24.dp),
-                    )
+        }
+        if (item.isDone && original == null) {
+            InfoPanel(item, onFavorite, Modifier.align(Alignment.BottomCenter).padding(16.dp))
+        }
+        if (original != null) {
+            Text(
+                "Your photo",
+                style = MaterialTheme.typography.titleMedium,
+                color = OnMirror,
+                modifier = Modifier.align(Alignment.TopCenter).padding(16.dp)
+                    .clip(RoundedCornerShape(50)).background(Mirror.copy(alpha = 0.75f)).padding(horizontal = 16.dp, vertical = 6.dp),
+            )
+        }
+    }
+}
+
+/** Frosted strip over the bottom of a finished look: what it is, what it costs, shortlist. */
+@Composable
+private fun InfoPanel(item: SessionItem, onFavorite: () -> Unit, modifier: Modifier) {
+    var bump by remember { mutableIntStateOf(0) }
+    val heartScale by animateFloatAsState(
+        targetValue = if (bump % 2 == 1) 1.25f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        finishedListener = { if (bump % 2 == 1) bump += 1 },
+        label = "heart",
+    )
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(Mirror.copy(alpha = 0.84f))
+            .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(18.dp))
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(item.saree.name, fontFamily = Rozha, fontSize = 26.sp, lineHeight = 30.sp, color = OnMirror, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                listOf(item.saree.fabric, rupees(item.saree.price)).filter { it.isNotBlank() }.joinToString(", "),
+                style = MaterialTheme.typography.bodyLarge, color = OnMirrorMuted,
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Button(
+            onClick = { if (!item.favorite) bump += 1; onFavorite() },
+            shape = RoundedCornerShape(14.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (item.favorite) Kumkum else MirrorRaised2,
+                contentColor = Color.White,
+            ),
+        ) {
+            Icon(
+                if (item.favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp).scale(heartScale),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(if (item.favorite) "Shortlisted" else "Shortlist", style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+private val DRAPE_STEPS = listOf(
+    "Reading the border and pallu",
+    "Pleating at the waist",
+    "Placing the pallu on your shoulder",
+    "Final touches",
+)
+
+/** While a look is being made: the saree glows behind a weaving loom, with step-by-step progress. */
+@Composable
+private fun Draping(item: SessionItem) {
+    var step by remember(item.id) { mutableIntStateOf(0) }
+    LaunchedEffect(item.id, item.status) {
+        if (item.status == "running") {
+            while (step < DRAPE_STEPS.lastIndex) {
+                delay(6000)
+                step += 1
+            }
+        }
+    }
+    Box(Modifier.fillMaxSize()) {
+        RemoteImage(item.saree.imageUrl, null, Modifier.fillMaxSize().blur(28.dp).alpha(0.45f))
+        Box(Modifier.fillMaxSize().background(Mirror.copy(alpha = 0.45f)))
+        Column(
+            Modifier.fillMaxSize().padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(26.dp, Alignment.CenterVertically),
+        ) {
+            DrapingLoom(Modifier.size(220.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    if (item.status == "running") "Now draping" else "Up next",
+                    style = MaterialTheme.typography.titleMedium, color = ZariLight,
+                )
+                Text(
+                    item.saree.name, fontFamily = Rozha, fontSize = 34.sp, lineHeight = 38.sp,
+                    color = OnMirror, textAlign = TextAlign.Center,
+                )
+            }
+            if (item.status == "running") {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.widthIn(max = 420.dp)) {
+                    DRAPE_STEPS.forEachIndexed { i, label -> StepRow(label, done = i < step, now = i == step) }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StepRow(label: String, done: Boolean, now: Boolean) {
+    val pulse = com.pallu.tryon.ui.theme.rememberSweep(800, "step-pulse")
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(28.dp).clip(CircleShape)
+                .background(if (done) ZariLight else Color.Transparent)
+                .border(2.dp, if (done || now) ZariLight else MirrorLine, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (done) Icon(Icons.Filled.Check, contentDescription = null, tint = OnGold, modifier = Modifier.size(16.dp))
+            if (now) Box(Modifier.size(11.dp).clip(CircleShape).background(GoldBright.copy(alpha = lerp(0.45f, 1f, pulse))))
+        }
+        Spacer(Modifier.width(14.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+            color = when { now -> Color(0xFFFFF6E6); done -> OnMirror; else -> OnMirrorFaint },
+        )
+    }
+}
+
+@Composable
+private fun Failed(item: SessionItem, onRetry: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
+    ) {
+        RemoteImage(item.saree.imageUrl, item.saree.name, Modifier.size(150.dp, 186.dp).clip(RoundedCornerShape(12.dp)))
+        Text("We couldn't drape this one", fontFamily = Rozha, fontSize = 30.sp, color = OnMirror, textAlign = TextAlign.Center)
+        Muted("This sometimes happens with an unusual photo. Try once more.", scale = 0.85f, align = TextAlign.Center)
+        GoldButton("Try again", onRetry, icon = Icons.Filled.Refresh)
     }
 }

@@ -70,9 +70,14 @@ fun BarcodeScannerView(
     modifier: Modifier,
     kind: ScanKind,
     useFrontCamera: Boolean = false,
+    torch: Boolean = false,
     onCode: (String) -> Unit,
 ) {
     val context = LocalContext.current
+    var boundCamera by remember { mutableStateOf<androidx.camera.core.Camera?>(null) }
+    LaunchedEffect(torch, boundCamera) {
+        boundCamera?.let { cam -> if (cam.cameraInfo.hasFlashUnit()) cam.cameraControl.enableTorch(torch) }
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     val latestOnCode by rememberUpdatedState(onCode)
     val executor = remember { Executors.newSingleThreadExecutor() }
@@ -104,12 +109,15 @@ fun BarcodeScannerView(
             val selector = pickCamera(p, useFrontCamera)
             try {
                 p.unbindAll()
-                p.bindToLifecycle(lifecycleOwner, selector, preview, analysis)
+                boundCamera = p.bindToLifecycle(lifecycleOwner, selector, preview, analysis)
             } catch (e: Exception) {
                 Log.e(TAG, "Camera bind failed", e)
             }
         }, ContextCompat.getMainExecutor(context))
-        onDispose { provider?.unbindAll() }
+        onDispose {
+            boundCamera = null
+            provider?.unbindAll()
+        }
     }
     DisposableEffect(Unit) {
         onDispose {

@@ -81,11 +81,13 @@ data class FavoriteBody(val favorite: Boolean)
 
 enum class AppMode { STAFF, KIOSK }
 
-/** Friendly names shown to customers; ids match the backend's DRAPE_STYLES. */
-val DRAPE_LABELS = linkedMapOf(
-    "nivi" to "Nivi (classic)",
-    "bengali" to "Bengali",
-    "gujarati" to "Gujarati seedha pallu",
-    "nauvari" to "Maharashtrian nauvari",
-    "modern" to "Modern pre-pleated",
+/** Drape styles shown to customers; ids match the backend's DRAPE_STYLES. */
+data class DrapeInfo(val id: String, val label: String, val description: String)
+
+val DRAPES = listOf(
+    DrapeInfo("nivi", "Nivi", "Classic: neat pleats at the waist, pallu over the left shoulder."),
+    DrapeInfo("bengali", "Bengali", "Box pleats, pallu brought round to rest on the right shoulder."),
+    DrapeInfo("gujarati", "Gujarati", "Seedha pallu: spread across the front so the whole design shows."),
+    DrapeInfo("nauvari", "Nauvari", "Maharashtrian nine-yard drape, tucked at the back like a dhoti."),
+    DrapeInfo("modern", "Modern", "Slim pre-pleated drape with a pinned, narrow pallu."),
 )

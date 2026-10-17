@@ -74,7 +74,7 @@ fun StoreHeader(title: String, subtitle: String? = null, onBack: (() -> Unit)? =
             }
             actions()
         }
-        ZariBorder()
+        ZariBorder(ground = ArakkuDeep)
     }
 }
 

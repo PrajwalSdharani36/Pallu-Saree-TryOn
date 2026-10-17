@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pallu.tryon.data.AppContainer
 import com.pallu.tryon.data.FavoriteBody
+import com.pallu.tryon.data.Saree
 import com.pallu.tryon.data.SessionItem
 import com.pallu.tryon.data.TryOnSession
 import kotlinx.coroutines.Job
@@ -30,8 +31,10 @@ data class KioskState(
     val uploading: Boolean = false,
     val finishing: Boolean = false,
     val error: String? = null,
-    /** Kept after finishing so the thank-you screen can list them for the staff. */
-    val shortlist: List<String> = emptyList(),
+    /** Kept after finishing so the thank-you screen can show them for the staff. */
+    val shortlist: List<Saree> = emptyList(),
+    /** A few catalogue sarees for the welcome screen. */
+    val showcase: List<Saree> = emptyList(),
 ) {
     val anyWorking get() = session?.items?.any { it.isWorking } == true
 }
@@ -46,6 +49,18 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
 
     private var pollJob: Job? = null
     private var lastCode: Pair<String, Long>? = null
+
+    init {
+        loadShowcase()
+    }
+
+    /** Catalogue photos for the welcome screen's fan of sarees. Refreshed each time the mirror resets. */
+    fun loadShowcase() {
+        viewModelScope.launch {
+            runCatching { container.repository().api.sarees(limit = 5) }
+                .onSuccess { list -> _state.update { it.copy(showcase = list.take(5)) } }
+        }
+    }
 
     fun touch() {
         lastTouch = System.currentTimeMillis()
@@ -70,7 +85,7 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
                         _state.update { it.copy(lookingUp = false, error = "This QR code has already been used. Ask our staff for a new one.") }
                     } else {
                         _state.update {
-                            KioskState(session = s, drapeStyle = s.drapeStyle, mode = null)
+                            KioskState(session = s, drapeStyle = s.drapeStyle, mode = null, showcase = it.showcase)
                         }
                         onFound()
                     }
@@ -157,12 +172,12 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
         val session = _state.value.session ?: return onDone()
         _state.update { it.copy(finishing = true) }
         pollJob?.cancel()
-        val shortlist = session.items.filter { it.favorite }.map { it.saree.name }
+        val shortlist = session.items.filter { it.favorite }.map { it.saree }
         viewModelScope.launch {
             val repo = container.repository()
             runCatching { repo.api.finish(session.id) }
             _state.update {
-                KioskState(shortlist = shortlist)
+                KioskState(shortlist = shortlist, showcase = it.showcase)
             }
             onDone()
         }
@@ -172,8 +187,9 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
     fun reset() {
         pollJob?.cancel()
         val session = _state.value.session
-        _state.value = KioskState()
+        _state.value = KioskState(showcase = _state.value.showcase)
         lastCode = null
+        loadShowcase()
         if (session != null && !session.isClosed && session.hasPhoto) {
             viewModelScope.launch { runCatching { container.repository().api.finish(session.id) } }
         }

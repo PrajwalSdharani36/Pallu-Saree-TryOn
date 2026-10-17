@@ -24,10 +24,20 @@ val Peacock = Color(0xFF0E5E63)     // mayil teal
 val Zari = Color(0xFFB8892E)        // woven gold
 val ZariLight = Color(0xFFD9AE55)
 val Line = Color(0xFFE3DCE6)
-val Mirror = Color(0xFF1A1216)      // kiosk trial-room background
-val MirrorRaised = Color(0xFF2A1D24)
-val OnMirror = Color(0xFFF3E9EE)
-val OnMirrorMuted = Color(0xFFB9A6B1)
+// Mirror (kiosk) palette: a dim trial room, like the inside of a jewellery box
+val Mirror = Color(0xFF170F14)      // night aubergine
+val MirrorRaised = Color(0xFF241820) // velvet
+val MirrorRaised2 = Color(0xFF31212B)
+val MirrorDeep = Color(0xFF0E090C)
+val OnMirror = Color(0xFFF6ECE4)    // warm ivory
+val OnMirrorMuted = Color(0xFFBBA8B3)
+val OnMirrorFaint = Color(0xFF9C8A95)
+val MirrorLine = Color(0xFF5A4450)
+val GoldBright = Color(0xFFF1D48A)
+val OnGold = Color(0xFF1E1218)
+val Kumkum = Color(0xFFE0566B)      // shortlist heart
+val PeacockDeep = Color(0xFF1B6E5A)
+val TempleRed = Color(0xFF5C0F1F)
 val Danger = Color(0xFFA3122A)
 
 val Rozha = FontFamily(Font(R.font.rozha_one, FontWeight.Normal))
@@ -76,20 +86,22 @@ private val StoreColors = lightColorScheme(
 )
 
 private val MirrorColors = darkColorScheme(
-    primary = Color(0xFFE0566B),
-    onPrimary = Color.White,
-    primaryContainer = ArakkuDeep,
+    primary = ZariLight,
+    onPrimary = OnGold,
+    primaryContainer = Color(0xFF3A1F2A),
     onPrimaryContainer = OnMirror,
     secondary = Color(0xFF5FC2C6),
     onSecondary = Color(0xFF032426),
-    tertiary = ZariLight,
+    tertiary = Kumkum,
+    onTertiary = Color.White,
     background = Mirror,
     onBackground = OnMirror,
     surface = MirrorRaised,
     onSurface = OnMirror,
-    surfaceVariant = MirrorRaised,
+    surfaceVariant = MirrorRaised2,
     onSurfaceVariant = OnMirrorMuted,
-    outline = Color(0xFF4A3842),
+    outline = MirrorLine,
+    outlineVariant = Color(0xFF3A2A33),
     error = Color(0xFFFF7A8C),
 )
 
