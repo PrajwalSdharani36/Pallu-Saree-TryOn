@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The store server usually runs on the shop's Wi-Fi (http://192.168.x.x:8000), so cleartext
+     is allowed. Put the server behind HTTPS before using it over the internet. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

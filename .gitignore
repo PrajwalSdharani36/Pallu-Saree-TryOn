@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+backend/.env
+backend/data/
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/captures/
+android/.kotlin/
+*.apk
+*.aab
+*.keystore
+*.jks
+# OS
+.DS_Store
+Thumbs.db

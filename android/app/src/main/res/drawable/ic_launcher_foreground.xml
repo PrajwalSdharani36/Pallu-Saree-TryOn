@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A folded saree with a temple border: deep red body, gold zari triangles -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#F5F2F7" android:pathData="M34,30h40v48h-40z"/>
+    <path android:fillColor="#8E1B2E" android:pathData="M34,30h40v34h-40z"/>
+    <path android:fillColor="#0E5E63" android:pathData="M34,64h40v14h-40z"/>
+    <path android:fillColor="#D9AE55" android:pathData="M34,76 l5,-9 l5,9z M44,76 l5,-9 l5,9z M54,76 l5,-9 l5,9z M64,76 l5,-9 l5,9z"/>
+    <path android:fillColor="#D9AE55" android:pathData="M34,62h40v2h-40z"/>
+    <path android:fillColor="#D9AE55" android:pathData="M68,30h2v34h-2z"/>
+</vector>

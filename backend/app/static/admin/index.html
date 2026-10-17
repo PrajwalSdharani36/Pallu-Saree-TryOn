@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pallu Store Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;700&family=Rozha+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --silk:#F5F2F7; --paper:#FFFFFF; --ink:#24121A; --muted:#6E5A66;
+  --arakku:#8E1B2E; --arakku-deep:#6B1222; --peacock:#0E5E63; --zari:#B8892E;
+  --line:#E3DCE6; --ok:#2F6B3A; --warn:#9A5B00; --bad:#A3122A;
+  --radius-sm:6px; --radius-lg:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --silk:#1A1216; --paper:#24191F; --ink:#F3E9EE; --muted:#B9A6B1;
+    --arakku:#E0566B; --arakku-deep:#C23D52; --peacock:#5FC2C6; --zari:#D9AE55; --line:#3A2B33;
+    --ok:#7BC48A; --warn:#E3A64A; --bad:#FF7A8C;
+  }
+}
+:root[data-theme="dark"]{
+  --silk:#1A1216; --paper:#24191F; --ink:#F3E9EE; --muted:#B9A6B1;
+  --arakku:#E0566B; --arakku-deep:#C23D52; --peacock:#5FC2C6; --zari:#D9AE55; --line:#3A2B33;
+  --ok:#7BC48A; --warn:#E3A64A; --bad:#FF7A8C;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--silk);color:var(--ink);font:400 16px/1.55 "Mukta",system-ui,sans-serif}
+h1,h2{font-family:"Rozha One",Georgia,serif;font-weight:400;letter-spacing:.005em;margin:0}
+h1{font-size:2rem;line-height:1.1}
+h2{font-size:1.45rem;line-height:1.2;margin-bottom:.75rem}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--peacock);outline-offset:2px}
+
+/* The signature: a woven temple border, like the edge of a Kanjivaram */
+.zari{
+  height:22px;
+  background:
+    linear-gradient(var(--arakku),var(--arakku)) top/100% 5px no-repeat,
+    linear-gradient(var(--arakku),var(--arakku)) bottom/100% 3px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='14'%3E%3Cpath d='M0 14 L11 2 L22 14 Z' fill='%23B8892E'/%3E%3Cpath d='M7 14 L11 9 L15 14 Z' fill='%238E1B2E'/%3E%3C/svg%3E") 0 6px/22px 14px repeat-x,
+    var(--arakku-deep);
+}
+header{background:var(--arakku-deep);color:#FBEFF1}
+.bar{max-width:1240px;margin:0 auto;padding:18px 20px 14px;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+.bar h1{color:#FBEFF1}
+.bar .store{color:#F0C9A0;font-size:1rem}
+.bar .spacer{flex:1}
+.bar button{background:transparent;border:1px solid #F0C9A066;color:#FBEFF1;border-radius:var(--radius-sm);padding:4px 12px;cursor:pointer}
+
+main{max-width:1240px;margin:0 auto;padding:24px 20px 64px}
+.today{font-size:1.2rem;max-width:62ch;margin:0 0 28px}
+.today b{color:var(--arakku);font-weight:700}
+.today .engine{display:block;font-size:.9rem;color:var(--muted);margin-top:4px}
+
+.layout{display:grid;grid-template-columns:340px 1fr;gap:32px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.add{position:static}}
+.layout>*{min-width:0}
+
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);padding:20px}
+.add{position:sticky;top:16px}
+label{display:block;font-weight:500;margin:12px 0 4px}
+.hint{font-size:.88rem;color:var(--muted);margin:2px 0 0}
+input[type=text],input[type=number],input[type=password],textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--silk)}
+textarea{min-height:64px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.drop{margin-top:4px;border:2px dashed var(--line);border-radius:var(--radius-lg);aspect-ratio:4/3;display:grid;place-items:center;
+  text-align:center;color:var(--muted);cursor:pointer;overflow:hidden;position:relative;background:var(--silk)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.primary{margin-top:18px;width:100%;padding:11px;border:0;border-radius:var(--radius-sm);background:var(--arakku);color:#fff;font-weight:700;cursor:pointer}
+.primary:disabled{opacity:.55;cursor:progress}
+.msg{min-height:1.4em;margin:10px 0 0;font-size:.95rem}
+.msg.err{color:var(--bad)} .msg.ok{color:var(--ok)}
+
+.cat-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.cat-head h2{margin:0}
+.cat-head input{max-width:280px;margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(190px,42vw),1fr));gap:18px}
+.saree{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;display:flex;flex-direction:column}
+.saree .ph{aspect-ratio:3/4;background:var(--line);position:relative}
+.saree .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.saree .ph::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;
+  background:repeating-linear-gradient(90deg,var(--zari) 0 6px,transparent 6px 10px)}
+.saree .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px;flex:1}
+.saree .name{font-weight:700;line-height:1.25}
+.saree .meta{color:var(--muted);font-size:.9rem}
+.saree .price{color:var(--arakku);font-weight:700}
+.saree .acts{display:flex;gap:6px;margin-top:auto;padding-top:8px}
+.saree .acts a,.saree .acts button{flex:1;text-align:center;font-size:.85rem;padding:5px 4px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);background:transparent;cursor:pointer;color:var(--ink);text-decoration:none}
+.saree .acts button.rm:hover{border-color:var(--bad);color:var(--bad)}
+.tag{font-size:.82rem}
+.tag.pending{color:var(--warn)} .tag.done{color:var(--ok)} .tag.failed{color:var(--bad)}
+.empty{padding:32px;text-align:center;color:var(--muted);border:2px dashed var(--line);border-radius:var(--radius-lg)}
+
+.sessions{margin-top:40px}
+table{width:100%;border-collapse:collapse;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:.9rem}
+td.code{font-family:"Rozha One",serif;font-size:1.1rem;letter-spacing:.06em}
+.fav{color:var(--arakku)}
+.table-wrap{overflow-x:auto}
+
+.login{max-width:420px;margin:12vh auto 0;padding:0 20px}
+.login .panel{padding:28px}
+.login p{color:var(--muted)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Pallu</h1>
+    <span class="store" id="storeName">Saree try-on</span>
+    <span class="spacer"></span>
+    <button id="logout" hidden>Sign out</button>
+  </div>
+  <div class="zari" aria-hidden="true"></div>
+</header>
+
+<section class="login" id="loginView" hidden>
+  <div class="panel">
+    <h2>Sign in to your store</h2>
+    <p>Enter the store key from the server's <code>.env</code> file (API_KEY).</p>
+    <form id="loginForm">
+      <label for="key">Store key</label>
+      <input id="key" type="password" autocomplete="current-password" required>
+      <button class="primary" type="submit">Sign in</button>
+      <p class="msg err" id="loginMsg"></p>
+    </form>
+  </div>
+</section>
+
+<main id="app" hidden>
+  <p class="today" id="today">Loading today's numbers…</p>
+
+  <div class="layout">
+    <aside class="panel add">
+      <h2>Add a saree</h2>
+      <form id="addForm">
+        <label for="photo">Photo of the folded saree</label>
+        <div class="drop" id="drop">
+          <span id="dropText">Tap to take or choose a photo.<br>Lay it flat with the pallu and border showing.</span>
+          <img id="preview" alt="" hidden>
+          <input id="photo" name="image" type="file" accept="image/*" capture="environment" required>
+        </div>
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" required placeholder="Maroon Kanjivaram with peacock pallu">
+        <div class="row2">
+          <div><label for="fabric">Fabric</label><input id="fabric" name="fabric" type="text" placeholder="Pure silk"></div>
+          <div><label for="price">Price (₹)</label><input id="price" name="price" type="number" min="0" step="1" placeholder="12500"></div>
+        </div>
+        <label for="color">Colour</label>
+        <input id="color" name="color" type="text" placeholder="Maroon and gold">
+        <label for="barcode">Barcode</label>
+        <input id="barcode" name="barcode" type="text" placeholder="Leave empty to create one">
+        <p class="hint">No tag on this saree? Leave it empty and print the label we create.</p>
+        <label for="desc">Notes for the stylist</label>
+        <textarea id="desc" name="description" placeholder="Contrast blouse piece in green, temple border"></textarea>
+        <button class="primary" id="addBtn" type="submit">Add to catalogue</button>
+        <p class="msg" id="addMsg" role="status"></p>
+      </form>
+    </aside>
+
+    <section>
+      <div class="cat-head">
+        <h2>Catalogue</h2>
+        <input id="search" type="text" placeholder="Search name, barcode, fabric" aria-label="Search catalogue">
+      </div>
+      <div class="grid" id="grid"></div>
+
+      <div class="sessions">
+        <h2>Recent customers</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Customer</th><th>Status</th><th>Sarees</th><th>Shortlisted</th><th>Started</th></tr></thead>
+            <tbody id="sessions"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const store = {
+  get(){ try { return localStorage.getItem("pallu.key") || ""; } catch { return ""; } },
+  set(v){ try { v ? localStorage.setItem("pallu.key", v) : localStorage.removeItem("pallu.key"); } catch {} },
+};
+let KEY = store.get();
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { "X-API-Key": KEY, ...(opts.headers || {}) } });
+  if (r.status === 401) { showLogin("That key didn't work. Check API_KEY on the server."); throw new Error("unauthorized"); }
+  if (!r.ok) {
+    let detail = r.statusText;
+    try { const j = await r.json(); detail = typeof j.detail === "string" ? j.detail : (j.detail?.message || JSON.stringify(j.detail)); } catch {}
+    throw new Error(detail);
+  }
+  return r.status === 204 ? null : r.json();
+}
+const withKey = (url) => url + (url.includes("?") ? "&" : "?") + "key=" + encodeURIComponent(KEY);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rupees = (n) => n ? "₹" + Number(n).toLocaleString("en-IN") : "";
+
+function showLogin(msg = "") {
+  $("#app").hidden = true; $("#logout").hidden = true; $("#loginView").hidden = false;
+  $("#loginMsg").textContent = msg; $("#key").focus();
+}
+async function boot() {
+  try {
+    const h = await (await fetch("/api/health")).json();
+    $("#storeName").textContent = h.store_name;
+    window.ENGINE = h.engine;
+  } catch {}
+  if (!KEY) return showLogin();
+  try { await api("/api/stats"); } catch { return; }
+  $("#loginView").hidden = true; $("#app").hidden = false; $("#logout").hidden = false;
+  loadAll();
+  setInterval(() => { loadStats(); loadSessions(); }, 15000);
+}
+
+$("#loginForm").addEventListener("submit", (e) => { e.preventDefault(); KEY = $("#key").value.trim(); store.set(KEY); boot(); });
+$("#logout").addEventListener("click", () => { KEY = ""; store.set(""); showLogin(); });
+
+function loadAll(){ loadStats(); loadCatalog(); loadSessions(); }
+
+async function loadStats() {
+  const s = await api("/api/stats");
+  const t = s.sessions === 1 ? "1 customer" : `${s.sessions} customers`;
+  const speed = s.avg_generation_s ? ` Each look took about ${Math.round(s.avg_generation_s)} seconds.` : "";
+  const top = s.top_sarees[0] && s.top_sarees[0].favorites ? ` Most loved: <b>${esc(s.top_sarees[0].name)}</b>.` : "";
+  $("#today").innerHTML = s.sessions
+    ? `Today <b>${t}</b> tried on <b>${s.tryons_done} sarees</b> and shortlisted <b>${s.favorites}</b>.${speed}${top}`
+    : `No customers yet today. ${s.catalog_size} sarees are ready in the catalogue.`;
+  $("#today").insertAdjacentHTML("beforeend",
+    window.ENGINE === "mock" ? `<span class="engine">Demo mode: images are placeholders. Set ENGINE=gemini on the server for real try-ons.</span>` : "");
+}
+
+let searchTimer;
+$("#search").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadCatalog, 250); });
+
+async function loadCatalog() {
+  const q = $("#search").value.trim();
+  const list = await api("/api/sarees" + (q ? "?q=" + encodeURIComponent(q) : ""));
+  const grid = $("#grid");
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty">${q ? "No sarees match that search." : "Your catalogue is empty. Add your first saree with the form."}</div>`;
+    return;
+  }
+  const label = { pending: "Reading the weave…", done: "Ready for try-on", failed: "Couldn't read the photo. Try a clearer one." };
+  grid.innerHTML = list.map((s) => `
+    <article class="saree">
+      <div class="ph"><img loading="lazy" src="${withKey(s.image_url)}" alt="${esc(s.name)}"></div>
+      <div class="body">
+        <div class="name">${esc(s.name)}</div>
+        <div class="meta">${esc([s.fabric, s.color].filter(Boolean).join(", "))}</div>
+        <div class="price">${rupees(s.price)}</div>
+        <div class="meta">${esc(s.barcode)}</div>
+        <div class="tag ${s.analysis_status}">${label[s.analysis_status] || ""}</div>
+        <div class="acts">
+          <a href="${withKey(s.label_url)}" target="_blank" rel="noopener">Print tag</a>
+          <button class="rm" data-id="${s.id}" data-name="${esc(s.name)}">Remove</button>
+        </div>
+      </div>
+    </article>`).join("");
+  if (list.some((s) => s.analysis_status === "pending")) setTimeout(loadCatalog, 4000);
+}
+
+$("#grid").addEventListener("click", async (e) => {
+  const b = e.target.closest("button.rm"); if (!b) return;
+  if (!confirm(`Remove "${b.dataset.name}" from the catalogue?`)) return;
+  await api(`/api/sarees/${b.dataset.id}`, { method: "DELETE" });
+  loadCatalog();
+});
+
+$("#photo").addEventListener("change", () => {
+  const f = $("#photo").files[0];
+  const img = $("#preview");
+  if (f) { img.src = URL.createObjectURL(f); img.hidden = false; $("#dropText").hidden = true; }
+});
+
+$("#addForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = $("#addBtn"), msg = $("#addMsg");
+  btn.disabled = true; btn.textContent = "Adding…"; msg.className = "msg"; msg.textContent = "";
+  try {
+    const s = await api("/api/sarees", { method: "POST", body: new FormData(e.target) });
+    msg.className = "msg ok"; msg.textContent = `Added ${s.name} with barcode ${s.barcode}.`;
+    e.target.reset(); $("#preview").hidden = true; $("#dropText").hidden = false;
+    loadCatalog(); loadStats();
+  } catch (err) {
+    msg.className = "msg err"; msg.textContent = err.message === "unauthorized" ? "" : `Couldn't add the saree: ${err.message}`;
+  } finally { btn.disabled = false; btn.textContent = "Add to catalogue"; }
+});
+
+async function loadSessions() {
+  const list = await api("/api/sessions?limit=15");
+  const words = { open: "Waiting at mirror", generating: "Creating looks", ready: "Viewing looks", closed: "Finished", expired: "Expired" };
+  $("#sessions").innerHTML = list.length ? list.map((s) => {
+    const favs = s.items.filter((i) => i.favorite).map((i) => esc(i.saree.name));
+    const started = new Date(s.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return `<tr><td class="code">${esc(s.code)}</td><td>${esc(s.customer_label) || "–"}${s.mode === "gift" ? " (gift)" : ""}</td>
+      <td>${words[s.status] || s.status}</td><td>${s.total}</td>
+      <td class="fav">${favs.length ? favs.join("<br>") : "–"}</td><td>${started}</td></tr>`;
+  }).join("") : `<tr><td colspan="6">No customer sessions yet. Staff start one from the Pallu app by scanning saree tags.</td></tr>`;
+}
+
+boot();
+</script>
+</body>
+</html>

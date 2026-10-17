@@ -1,0 +1,91 @@
+package com.pallu.tryon.data
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class Health(
+    val status: String,
+    @SerialName("store_name") val storeName: String,
+    val engine: String,
+)
+
+@Serializable
+data class Saree(
+    val id: String,
+    val barcode: String,
+    val name: String,
+    val fabric: String = "",
+    val color: String = "",
+    val price: Int = 0,
+    val description: String = "",
+    @SerialName("image_url") val imageUrl: String,
+    @SerialName("analysis_status") val analysisStatus: String = "pending",
+    val active: Boolean = true,
+)
+
+@Serializable
+data class SessionItem(
+    val id: String,
+    val position: Int,
+    val status: String,
+    val favorite: Boolean,
+    val error: String = "",
+    @SerialName("result_url") val resultUrl: String? = null,
+    val saree: Saree,
+) {
+    val isWorking get() = status == "queued" || status == "running"
+    val isDone get() = status == "done" && resultUrl != null
+    val isFailed get() = status == "failed"
+}
+
+@Serializable
+data class TryOnSession(
+    val id: String,
+    val code: String,
+    @SerialName("qr_payload") val qrPayload: String,
+    val status: String,
+    val mode: String,
+    @SerialName("drape_style") val drapeStyle: String,
+    @SerialName("customer_label") val customerLabel: String = "",
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("expires_at") val expiresAt: String,
+    @SerialName("has_photo") val hasPhoto: Boolean,
+    @SerialName("photo_expires_at") val photoExpiresAt: String? = null,
+    @SerialName("photo_ttl_minutes") val photoTtlMinutes: Int = 30,
+    val total: Int,
+    val done: Int,
+    val failed: Int,
+    val items: List<SessionItem>,
+) {
+    val isClosed get() = status == "closed" || status == "expired"
+    val isGenerating get() = status == "generating"
+}
+
+@Serializable
+data class DrapeStyle(val id: String, val description: String)
+
+@Serializable
+data class CreateSessionBody(
+    val barcodes: List<String> = emptyList(),
+    @SerialName("saree_ids") val sareeIds: List<String> = emptyList(),
+    @SerialName("drape_style") val drapeStyle: String = "nivi",
+    @SerialName("customer_label") val customerLabel: String = "",
+)
+
+@Serializable
+data class AddItemBody(val barcode: String? = null, @SerialName("saree_id") val sareeId: String? = null)
+
+@Serializable
+data class FavoriteBody(val favorite: Boolean)
+
+enum class AppMode { STAFF, KIOSK }
+
+/** Friendly names shown to customers; ids match the backend's DRAPE_STYLES. */
+val DRAPE_LABELS = linkedMapOf(
+    "nivi" to "Nivi (classic)",
+    "bengali" to "Bengali",
+    "gujarati" to "Gujarati seedha pallu",
+    "nauvari" to "Maharashtrian nauvari",
+    "modern" to "Modern pre-pleated",
+)

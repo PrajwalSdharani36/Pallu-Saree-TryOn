@@ -1,0 +1,11 @@
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - pallu-data:/data
+    restart: unless-stopped
+volumes:
+  pallu-data:
