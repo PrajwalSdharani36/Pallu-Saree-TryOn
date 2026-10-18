@@ -37,7 +37,30 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
+      - name: Report build errors as annotations
+        if: failure()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          lines = open("build.log", encoding="utf-8", errors="replace").read().splitlines()
+          errs = [l for l in lines if re.match(r"^(e: |ERROR:|error:)", l.strip())]
+          wrong = []
+          for i, l in enumerate(lines):
+              if "What went wrong" in l:
+                  wrong = lines[i:i + 25]
+                  break
+          items = errs or wrong or lines[-60:]
+          chunk = 15
+          for n in range(0, min(len(items), chunk * 9), chunk):
+              msg = "%0A".join(x.replace("%", "%25").replace("\r", "") for x in items[n:n + chunk])
+              print(f"::error title=build part {n // chunk + 1}::{msg}")
+          print(f"::notice title=summary::{len(errs)} compiler errors")
+          PY
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

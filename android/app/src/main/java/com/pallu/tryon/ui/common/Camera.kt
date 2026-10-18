@@ -101,12 +101,13 @@ fun BarcodeScannerView(
         providerFuture.addListener({
             val p = providerFuture.get()
             provider = p
+            val selector = pickCamera(p, useFrontCamera)
+            mirrorIfExternal(previewView, selector, wantMirror = useFrontCamera)
             val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
             val analysis = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
                 .also { it.setAnalyzer(executor, CodeAnalyzer(scanner) { code -> latestOnCode(code) }) }
-            val selector = pickCamera(p, useFrontCamera)
             try {
                 p.unbindAll()
                 boundCamera = p.bindToLifecycle(lifecycleOwner, selector, preview, analysis)
@@ -128,13 +129,40 @@ fun BarcodeScannerView(
     AndroidView(factory = { previewView }, modifier = modifier)
 }
 
-private fun pickCamera(p: ProcessCameraProvider, front: Boolean): CameraSelector {
-    val wanted = if (front) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
-    val other = if (front) CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA
-    return when {
-        runCatching { p.hasCamera(wanted) }.getOrDefault(false) -> wanted
-        runCatching { p.hasCamera(other) }.getOrDefault(false) -> other
-        else -> wanted
+/** Any camera that isn't the rear one: on a big kiosk this is usually a USB webcam. */
+private val NOT_BACK: CameraSelector = CameraSelector.Builder()
+    .addCameraFilter { infos -> infos.filter { runCatching { it.lensFacing }.getOrNull() != CameraSelector.LENS_FACING_BACK } }
+    .build()
+
+/** Whatever camera exists (last resort). */
+private val ANY_CAMERA: CameraSelector = CameraSelector.Builder().addCameraFilter { infos -> infos.take(1) }.build()
+
+/**
+ * Tablets and phones have front/back cameras; big Android kiosks often only have a USB webcam,
+ * which CameraX reports as an "external" camera. Prefer the requested side, then a USB camera,
+ * then anything at all, so the mirror never shows a black screen.
+ */
+internal fun pickCamera(p: ProcessCameraProvider, front: Boolean): CameraSelector {
+    fun has(s: CameraSelector) = runCatching { p.hasCamera(s) }.getOrDefault(false)
+    val order = if (front) {
+        listOf(CameraSelector.DEFAULT_FRONT_CAMERA, NOT_BACK, CameraSelector.DEFAULT_BACK_CAMERA, ANY_CAMERA)
+    } else {
+        listOf(CameraSelector.DEFAULT_BACK_CAMERA, CameraSelector.DEFAULT_FRONT_CAMERA, ANY_CAMERA)
+    }
+    return order.firstOrNull { has(it) } ?: ANY_CAMERA
+}
+
+/**
+ * PreviewView mirrors the built-in front camera by itself. A USB camera facing the customer
+ * is not mirrored, so flip the preview (needs the TextureView-based mode to apply).
+ */
+private fun mirrorIfExternal(view: PreviewView, selector: CameraSelector, wantMirror: Boolean) {
+    val builtIn = selector == CameraSelector.DEFAULT_FRONT_CAMERA || selector == CameraSelector.DEFAULT_BACK_CAMERA
+    if (wantMirror && !builtIn) {
+        view.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        view.scaleX = -1f
+    } else {
+        view.scaleX = 1f
     }
 }
 
@@ -191,11 +219,12 @@ fun PhotoCameraView(modifier: Modifier, camera: PhotoCamera, useFrontCamera: Boo
         future.addListener({
             val p = future.get()
             provider = p
+            val selector = pickCamera(p, useFrontCamera)
+            mirrorIfExternal(previewView, selector, wantMirror = useFrontCamera)
             val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
             val capture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .build()
-            val selector = pickCamera(p, useFrontCamera)
             try {
                 p.unbindAll()
                 p.bindToLifecycle(lifecycleOwner, selector, preview, capture)
