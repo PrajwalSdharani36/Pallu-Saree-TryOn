@@ -102,7 +102,6 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
             val side = 56.dp * k.coerceAtLeast(0.6f)
-            val peek = (maxWidth * 0.16f).coerceIn(40.dp, 140.dp)
             Column(Modifier.fillMaxSize()) {
                 // ---- header
                 Row(
@@ -128,10 +127,15 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                     ReadyBar(session.done, session.total, Modifier.padding(start = side, end = side, top = 14.dp))
                 }
 
-                // ---- the gallery: neighbours peek in, smaller and dimmer
+                // ---- the gallery: neighbours peek in, smaller and dimmer. Each look keeps the photo's
+                // 3:4 portrait shape, so on a landscape screen the drape isn't cropped to a strip.
+                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(top = 20.dp)) {
+                val minPeek = (maxWidth * 0.16f).coerceIn(40.dp, 140.dp)
+                val pageW = minOf(maxWidth - minPeek * 2, (maxHeight - 12.dp) * 0.75f)
+                val peek = (maxWidth - pageW) / 2
                 HorizontalPager(
                     state = pager,
-                    modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 20.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = peek, vertical = 6.dp),
                     pageSpacing = 18.dp,
                     key = { items[it].id },
@@ -152,6 +156,7 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                             alpha = lerp(1f, 0.42f, offset)
                         },
                     )
+                }
                 }
 
                 Row(

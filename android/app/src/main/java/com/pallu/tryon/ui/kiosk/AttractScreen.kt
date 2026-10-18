@@ -259,7 +259,7 @@ private fun StartCard(
         if (vertical) {
             Column(verticalArrangement = Arrangement.spacedBy(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 // capped so the camera window never pushes the code boxes off a phone screen
-                scanner(Modifier.fillMaxWidth(if (compact) 0.8f else 1f).widthIn(max = if (compact) 260.dp else 210.dp).aspectRatio(1f))
+                scanner(Modifier.fillMaxWidth(if (compact) 0.8f else 1f).widthIn(max = if (compact) 260.dp else 160.dp).aspectRatio(1f))
                 words(Modifier.fillMaxWidth())
             }
         } else {

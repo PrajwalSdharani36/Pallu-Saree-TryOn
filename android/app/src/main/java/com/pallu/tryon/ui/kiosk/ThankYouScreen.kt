@@ -79,14 +79,17 @@ fun ThankYouScreen(vm: KioskViewModel, onDone: () -> Unit) {
 
     KioskPage {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            val k = headlineSize(maxWidth)
+            // landscape tablets are short: smaller title and thumbnails so "Start over" stays on screen
+            val short = maxHeight < 900.dp
+            val k = headlineSize(maxWidth) * (if (short) 0.72f else 1f)
+            val thumbW = if (short) 140.dp else 200.dp
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     .padding(horizontal = 56.dp * k.coerceAtLeast(0.6f), vertical = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.spacedBy(if (short) 14.dp else 24.dp, Alignment.CenterVertically),
             ) {
-                TempleMotif(Modifier.size(120.dp, 64.dp))
+                TempleMotif(Modifier.size(120.dp * k, 64.dp * k))
                 Text("Thank you", fontFamily = Rozha, fontSize = (96 * k).sp, lineHeight = (100 * k).sp, color = OnMirror)
                 Text(
                     "Your selections have been saved.",
@@ -101,18 +104,18 @@ fun ThankYouScreen(vm: KioskViewModel, onDone: () -> Unit) {
                             .clip(RoundedCornerShape(22.dp))
                             .background(MirrorRaised)
                             .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(22.dp))
-                            .padding(28.dp),
+                            .padding(if (short) 18.dp else 28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(if (short) 12.dp else 20.dp),
                     ) {
                         Muted("Our staff have your shortlist and will bring these out for you", scale = 0.9f, align = TextAlign.Center)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
                             items(state.shortlist, key = { it.id }) { s ->
-                                Column(Modifier.width(200.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Column(Modifier.width(thumbW), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Box {
                                         RemoteImage(
                                             s.imageUrl, s.name,
-                                            Modifier.size(200.dp, 248.dp).clip(RoundedCornerShape(12.dp))
+                                            Modifier.size(thumbW, thumbW * 1.24f).clip(RoundedCornerShape(12.dp))
                                                 .border(2.dp, ZariLight, RoundedCornerShape(12.dp)),
                                         )
                                         Badge(Kumkum, Icons.Filled.Favorite, Modifier.align(Alignment.TopEnd).padding(10.dp), size = 34.dp, tint = Color.White)
