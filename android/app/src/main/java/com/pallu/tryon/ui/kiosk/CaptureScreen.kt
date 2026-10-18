@@ -77,6 +77,9 @@ import com.pallu.tryon.ui.theme.ZariLight
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
+/** Seconds between tapping the button and the photo: enough to step back from a tablet on a stand. */
+private const val COUNTDOWN_SECONDS = 4
+
 @Composable
 fun CaptureScreen(vm: KioskViewModel, onBack: () -> Unit, onUploaded: () -> Unit) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -104,7 +107,7 @@ private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
 
     // ring empties smoothly across the three seconds
     val ring by animateFloatAsState(
-        targetValue = if (countdown > 0) (countdown - 1) / 3f else 1f,
+        targetValue = if (countdown > 0) (countdown - 1) / COUNTDOWN_SECONDS.toFloat() else 1f,
         animationSpec = tween(if (countdown > 0) 1000 else 0, easing = LinearEasing),
         label = "countdown-ring",
     )
@@ -195,8 +198,8 @@ private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
                 }
             } else {
                 GoldButton(
-                    "Take my photo in 3 seconds",
-                    onClick = { error = null; countdown = 3 },
+                    "Take my photo in $COUNTDOWN_SECONDS seconds",
+                    onClick = { error = null; countdown = COUNTDOWN_SECONDS },
                     icon = Icons.Filled.PhotoCamera,
                     enabled = hasCamera,
                 )

@@ -93,7 +93,7 @@ On first launch, enter the server address (for example `192.168.1.20:8000`, the 
 1. **Add sarees** on the admin page: one photo of the folded saree with the pallu and border visible, plus a name and price. No barcode on the saree? Leave the field empty and click **Print tag**.
 2. **Staff phone**: tap *Scan a new customer's sarees*, scan each tag, then *Create QR code*.
 3. **Mirror**: the customer shows the QR (or types the 6-letter code), chooses *Me* or *Someone else*, picks a drape style (Nivi, Bengali, Gujarati, Nauvari, Modern) and agrees to the photo.
-4. **Me:** a 3-second countdown takes one full-length photo.
+4. **Me:** a 4-second countdown takes one full-length photo.
    **Someone else (gift):** the mirror asks the customer to WhatsApp a photo of the person to the staff member. The staff member taps **Add photo** on that customer's QR screen and confirms permission, and the looks start on the mirror automatically.
 5. The looks appear one by one. Customers swipe, press and hold to compare with the original photo, and tap **Shortlist** on the ones they like.
 6. **I'm done** deletes the photo and every generated image right away. The shortlist stays, so staff see it live on their phone and on the admin page.
