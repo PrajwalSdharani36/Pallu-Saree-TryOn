@@ -70,21 +70,33 @@ Model settings live in `.env`:
 
 Each try-on is one image-generation call, plus one cheap text call per saree when it's added. Check current prices on Google's pricing page before you set the image size.
 
-### 3. Build the Android app
+### 3. Get the Android app
 
-1. Open the `android/` folder in **Android Studio** (Ladybug or newer). It downloads Gradle and the libraries the first time.
-2. Run on a phone (Staff) and a tablet (Mirror). Android 8.0+ with a camera.
-3. On first launch, enter the server address (for example `192.168.1.20:8000`, the PC's address on the shop Wi-Fi) and the store key, then choose **Staff phone** or **Try-on mirror**.
+**Easiest: download the APK GitHub builds for you.** Every push to `main` builds the app automatically.
+On GitHub open the repo, then **Actions**, the latest green **Build** run, and download **pallu-debug-apk** under *Artifacts*.
+Unzip it and copy `app-debug.apk` to the phone, tablet or kiosk. To install it, allow "Install unknown apps" for your file manager.
 
-To leave mirror mode, press and hold the store name on the start screen and enter the store key. For a real store, also turn on Android **screen pinning** on the tablet so customers can't leave the app.
+**Or build it yourself:** open the `android/` folder in **Android Studio** (Ladybug or newer) and press Run.
+
+On first launch, enter the server address (for example `192.168.1.20:8000`, the PC's address on the shop Wi-Fi) and the store key, then choose **Staff phone** or **Try-on mirror**.
+
+### 4. Setting up the mirror (tablet or big kiosk)
+
+- **Any Android 8+ screen works.** That includes the big vertical 43"–65" touch kiosks, which mostly run Android inside. Layouts scale to the screen, and the AI runs on Google's servers, so a basic kiosk board is fast enough. Google Play is not needed.
+- **Camera:** a tablet's front camera works. On a big kiosk, use a 1080p USB webcam at roughly chest height; the app finds USB cameras automatically. The customer stands about 2–2.5 m back so their whole body fits the outline.
+- **Lock it down:** when you choose *Try-on mirror*, Pallu can become the device's home screen. Press the Home button, pick **Pallu** and choose **Always**. The kiosk then boots straight into the mirror, and Home and Back can't take customers out.
+- **Leaving mirror mode (staff):** press and hold the store name on the start screen and enter the store key.
+- **Windows kiosks** can't run the Android app.
 
 ## The store flow
 
 1. **Add sarees** on the admin page: one photo of the folded saree with the pallu and border visible, plus a name and price. No barcode on the saree? Leave the field empty and click **Print tag**.
 2. **Staff phone**: tap *Scan a new customer's sarees*, scan each tag, then *Create QR code*.
-3. **Mirror**: the customer shows the QR (or types the 6-letter code), chooses *Me* or *Someone else* (gift mode uses a photo from the gallery), picks a drape style (Nivi, Bengali, Gujarati, Nauvari, Modern) and agrees to the photo.
-4. A 3-second countdown takes one full-length photo. The looks appear one by one. Customers swipe, press and hold to compare with their own photo, and tap **Shortlist** on the ones they like.
-5. **I'm done** deletes the photo and every generated image right away. The shortlist stays, so staff see it live on their phone and on the admin page.
+3. **Mirror**: the customer shows the QR (or types the 6-letter code), chooses *Me* or *Someone else*, picks a drape style (Nivi, Bengali, Gujarati, Nauvari, Modern) and agrees to the photo.
+4. **Me:** a 3-second countdown takes one full-length photo.
+   **Someone else (gift):** the mirror asks the customer to WhatsApp a photo of the person to the staff member. The staff member taps **Add photo** on that customer's QR screen and confirms permission, and the looks start on the mirror automatically.
+5. The looks appear one by one. Customers swipe, press and hold to compare with the original photo, and tap **Shortlist** on the ones they like.
+6. **I'm done** deletes the photo and every generated image right away. The shortlist stays, so staff see it live on their phone and on the admin page.
 
 Staff can scan more sarees into a session while the customer is at the mirror. They're draped straight away.
 
@@ -109,8 +121,9 @@ All endpoints except `/api/health` and `/api/drape-styles` need the `X-API-Key` 
 | `GET /api/sarees/{id}/label.png` | admin | Printable Code-128 tag |
 | `POST /api/sessions` | staff | Create a customer session from barcodes → code + QR payload |
 | `POST /api/sessions/{id}/items` | staff | Add a saree to a live session |
+| `PATCH /api/sessions/{id}` | kiosk | Save drape style / gift mode before the photo arrives |
 | `GET /api/session-lookup?q=` | kiosk | Find a session from the scanned QR or typed code |
-| `POST /api/sessions/{id}/photo` | kiosk | Upload photo (needs `consent=true`), start generation |
+| `POST /api/sessions/{id}/photo` | kiosk, staff | Upload photo (needs `consent=true`), start generation; staff use it for gift photos |
 | `GET /api/sessions/{id}` | both | Poll status and results |
 | `POST /api/sessions/{id}/items/{item}/favorite` · `/retry` | kiosk | Shortlist / regenerate one look |
 | `POST /api/sessions/{id}/finish` | kiosk | Customer finished: delete photos, keep shortlist |
