@@ -93,7 +93,14 @@ fun BarcodeScannerView(
         val first = if (kind == ScanKind.QR) Barcode.FORMAT_QR_CODE else Barcode.FORMAT_CODE_128
         BarcodeScanning.getClient(BarcodeScannerOptions.Builder().setBarcodeFormats(first, *formats).build())
     }
-    val previewView = remember { PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER } }
+    // TextureView-based preview: stays inside its (clipped, rounded) window. The default SurfaceView
+    // can spill over the header and text fields around a small scanner window on some devices.
+    val previewView = remember {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        }
+    }
 
     DisposableEffect(lifecycleOwner, useFrontCamera, kind) {
         val providerFuture = ProcessCameraProvider.getInstance(context)
@@ -159,7 +166,7 @@ internal fun pickCamera(p: ProcessCameraProvider, front: Boolean): CameraSelecto
 private fun mirrorIfExternal(view: PreviewView, selector: CameraSelector, wantMirror: Boolean) {
     val builtIn = selector == CameraSelector.DEFAULT_FRONT_CAMERA || selector == CameraSelector.DEFAULT_BACK_CAMERA
     if (wantMirror && !builtIn) {
-        view.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+        view.implementationMode = PreviewView.ImplementationMode.COMPATIBLE // scaleX needs TextureView
         view.scaleX = -1f
     } else {
         view.scaleX = 1f

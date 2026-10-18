@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -108,13 +109,14 @@ fun AttractScreen(
                             StartCard(
                                 vm = vm, hasCamera = hasCamera, code = code, onCode = { code = it },
                                 onSession = onSession, vertical = true,
-                                modifier = Modifier.widthIn(max = 460.dp).fillMaxWidth(0.42f),
+                                // fixed width: six code boxes + Start must always fit
+                                modifier = Modifier.width(400.dp).verticalScroll(rememberScrollState()),
                             )
                         }
                     } else {
                         Headline(k)
-                        SareeFan(state.showcase, Modifier.fillMaxWidth().height(330.dp * k))
-                        Spacer(Modifier.weight(1f))
+                        // takes whatever height is left, so the card, errors and privacy line always fit below
+                        SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
                         StartCard(vm, hasCamera, code, { code = it }, onSession, vertical = false, modifier = Modifier.fillMaxWidth())
                     }
                     ErrorNote(state.error)

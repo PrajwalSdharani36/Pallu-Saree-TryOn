@@ -142,8 +142,11 @@ fun QuietButton(text: String, onClick: () -> Unit) {
 @Composable
 fun SareeFan(sarees: List<Saree>, modifier: Modifier = Modifier) {
     if (sarees.isEmpty()) return
-    BoxWithConstraints(modifier, contentAlignment = Alignment.TopCenter) {
-        val cardW = (maxWidth.value * 0.27f).coerceIn(120f, 220f).dp
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        // sized by the width AND the height it's given, so the fanned cards never spill over the text below
+        val byWidth = (maxWidth.value * 0.27f).coerceIn(120f, 220f)
+        val byHeight = if (maxHeight.value.isFinite()) (maxHeight.value - 56f) / 1.24f / 1.06f else byWidth
+        val cardW = minOf(byWidth, byHeight).coerceAtLeast(64f).dp
         val cardH = cardW * 1.24f
         // order: outer cards first so the centre one sits on top
         val n = sarees.size.coerceAtMost(5)
