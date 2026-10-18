@@ -112,8 +112,11 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Your looks", fontFamily = Rozha, fontSize = (54 * k).sp, lineHeight = (58 * k).sp, color = OnMirror)
                         Muted(
-                            if (session.done == session.total) "All ${session.total} are ready. Swipe through and shortlist the ones you love."
-                            else "${session.done} of ${session.total} ready. The rest appear as soon as they're draped.",
+                            when {
+                                session.total == 1 && session.done == 1 -> "Your look is ready. Shortlist it if you love it."
+                                session.done == session.total -> "All ${session.total} are ready. Swipe through and shortlist the ones you love."
+                                else -> "${session.done} of ${session.total} ready. The rest appear as soon as they're draped."
+                            },
                             scale = 0.9f * k,
                         )
                     }
@@ -275,39 +278,62 @@ private fun InfoPanel(item: SessionItem, onFavorite: () -> Unit, modifier: Modif
         finishedListener = { if (bump % 2 == 1) bump += 1 },
         label = "heart",
     )
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Mirror.copy(alpha = 0.84f))
-            .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(18.dp))
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(item.saree.name, fontFamily = Rozha, fontSize = 26.sp, lineHeight = 30.sp, color = OnMirror, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(
-                listOf(item.saree.fabric, rupees(item.saree.price)).filter { it.isNotBlank() }.joinToString(", "),
-                style = MaterialTheme.typography.bodyLarge, color = OnMirrorMuted,
-            )
-        }
-        Spacer(Modifier.width(14.dp))
-        Button(
-            onClick = { if (!item.favorite) bump += 1; onFavorite() },
-            shape = RoundedCornerShape(14.dp),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (item.favorite) Kumkum else MirrorRaised2,
-                contentColor = Color.White,
-            ),
+    val tap = { if (!item.favorite) bump += 1; onFavorite() }
+    val meta = listOf(item.saree.fabric, rupees(item.saree.price)).filter { it.isNotBlank() }.joinToString(", ")
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val narrow = maxWidth < 420.dp
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(Mirror.copy(alpha = 0.84f))
+                .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(18.dp))
+                .padding(horizontal = if (narrow) 14.dp else 20.dp, vertical = if (narrow) 12.dp else 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                if (item.favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                contentDescription = null,
-                modifier = Modifier.size(22.dp).scale(heartScale),
-            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    item.saree.name, fontFamily = Rozha,
+                    fontSize = if (narrow) 19.sp else 26.sp, lineHeight = if (narrow) 23.sp else 30.sp,
+                    color = OnMirror, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+                Text(meta, style = MaterialTheme.typography.bodyMedium, color = OnMirrorMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             Spacer(Modifier.width(10.dp))
-            Text(if (item.favorite) "Shortlisted" else "Shortlist", style = MaterialTheme.typography.titleMedium)
+            if (narrow) {
+                // icon-only on small screens so the saree name keeps its room
+                Box(
+                    Modifier.size(52.dp).clip(CircleShape)
+                        .background(if (item.favorite) Kumkum else MirrorRaised2)
+                        .clickable(onClickLabel = if (item.favorite) "Remove from shortlist" else "Shortlist") { tap() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (item.favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = if (item.favorite) "Shortlisted" else "Shortlist",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp).scale(heartScale),
+                    )
+                }
+            } else {
+                Button(
+                    onClick = tap,
+                    shape = RoundedCornerShape(14.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (item.favorite) Kumkum else MirrorRaised2,
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Icon(
+                        if (item.favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp).scale(heartScale),
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(if (item.favorite) "Shortlisted" else "Shortlist", style = MaterialTheme.typography.titleMedium)
+                }
+            }
         }
     }
 }

@@ -262,12 +262,23 @@ fun jpeg(bmp: Bitmap, quality: Int = 90): ByteArray =
         out.toByteArray()
     }
 
-/** Reads a gallery image, fixes size, and returns JPEG bytes (EXIF rotation is fixed by the server). */
+/**
+ * Reads a gallery photo as an upright JPEG of sensible size. Phone photos store "which way is up"
+ * in EXIF; re-encoding loses it, so the rotation is applied to the pixels first.
+ */
 fun readImageAsJpeg(context: Context, uri: android.net.Uri): ByteArray {
     val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
         ?: error("Couldn't open that photo")
-    if (bytes.size < 8 * 1024 * 1024) return bytes
-    val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        ?: error("That file isn't a photo")
-    return jpeg(downscale(bmp, 1600))
+    val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+    if (bounds.outWidth <= 0) error("That file isn't a photo")
+    var sample = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1600) sample *= 2
+    val bmp = android.graphics.BitmapFactory.decodeByteArray(
+        bytes, 0, bytes.size, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample },
+    ) ?: error("That file isn't a photo")
+    val degrees = runCatching {
+        androidx.exifinterface.media.ExifInterface(java.io.ByteArrayInputStream(bytes)).rotationDegrees
+    }.getOrDefault(0)
+    return jpeg(downscale(rotate(bmp, degrees), 1600))
 }
