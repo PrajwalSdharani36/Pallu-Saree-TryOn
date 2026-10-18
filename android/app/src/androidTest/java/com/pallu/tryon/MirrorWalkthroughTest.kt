@@ -7,13 +7,13 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
@@ -32,8 +32,9 @@ import kotlin.concurrent.thread
 
 /**
  * Walks through the real app, end to end, against a running Pallu server (demo engine) and saves
- * a screenshot of every screen. Run by CI on an emulator set to a Galaxy Tab S6 Lite's screen
- * (1200 x 2000 px, 240 dpi) so the mirror's layout can be checked without the tablet in hand.
+ * a screenshot of every screen. CI runs it on an emulator shaped like a Galaxy Tab S6 Lite
+ * (1200 x 2000 px, 240 dpi) so the mirror's layout can be checked without the tablet in hand;
+ * see android/scripts/ui-check.sh.
  *
  * Instrumentation args: server (default http://10.0.2.2:8000, the host machine) and key.
  */
@@ -56,7 +57,7 @@ class MirrorWalkthroughTest {
 
     @Test
     fun tabletPortrait() = walk("tab-portrait_") {
-        tablet(landscape = false)
+        device.setOrientationNatural()
         mirrorVisit()
         giftVisit()
         setupScreen()
@@ -64,15 +65,14 @@ class MirrorWalkthroughTest {
 
     @Test
     fun tabletLandscape() = walk("tab-landscape_") {
-        tablet(landscape = true)
+        device.setOrientationLeft()
         mirrorVisit()
         giftVisit()
     }
 
     @Test
     fun phoneStaff() = walk("phone_") {
-        display(1080, 2400, 420)
-        device.setOrientationNatural()
+        device.setOrientationNatural() // the CI script switches the screen to phone size first
         staffVisit()
         setupScreen()
     }
@@ -248,24 +248,14 @@ class MirrorWalkthroughTest {
 
     // ------------------------------------------------------------------ device helpers
 
-    private fun tablet(landscape: Boolean) {
-        display(1200, 2000, 240) // Galaxy Tab S6 Lite
-        if (landscape) device.setOrientationLeft() else device.setOrientationNatural()
-    }
-
-    private fun display(w: Int, h: Int, dpi: Int) {
-        shell("wm size ${w}x$h")
-        shell("wm density $dpi")
-        SystemClock.sleep(800)
-    }
-
-    private fun shell(cmd: String): String =
-        ParcelFileDescriptor.AutoCloseInputStream(instr.uiAutomation.executeShellCommand(cmd)).use {
-            it.readBytes().decodeToString()
+    /** Waits for something on screen; if it never appears, scrolls the page looking for it. */
+    private fun find(sel: BySelector, timeout: Long = 15_000): UiObject2 {
+        device.wait(Until.findObject(sel), timeout)?.let { return it }
+        device.findObject(By.scrollable(true))?.let { list ->
+            list.scrollUntil(Direction.DOWN, Until.findObject(sel))?.let { return it }
         }
-
-    private fun find(sel: BySelector, timeout: Long = 15_000): UiObject2 =
-        device.wait(Until.findObject(sel), timeout) ?: error("Not on screen after ${timeout / 1000}s: $sel")
+        error("Not on screen after ${timeout / 1000}s: $sel")
+    }
 
     private fun tap(text: String) {
         val o = find(By.text(text))

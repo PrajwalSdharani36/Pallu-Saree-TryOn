@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Boots a headless emulator for the UI walkthrough, keeping its log for diagnosis.
+# Boots a headless emulator shaped like a Galaxy Tab S6 Lite (1200 x 2000 px, 240 dpi) for the UI walkthrough, keeping its log for diagnosis.
 set -x
 OUT=${OUT:-$PWD/../ui-shots}
 mkdir -p "$OUT"
@@ -14,7 +14,7 @@ mkdir -p "$ANDROID_AVD_HOME"
 yes | "$BIN/sdkmanager" --install "$IMG" emulator platform-tools > "$OUT/sdkmanager.txt" 2>&1
 echo no | "$BIN/avdmanager" create avd -n tab -k "$IMG" --force -p "$ANDROID_AVD_HOME/tab.avd" >> "$OUT/sdkmanager.txt" 2>&1
 CFG="$ANDROID_AVD_HOME/tab.avd/config.ini"
-for kv in hw.ramSize=3072 hw.cpu.ncore=2 disk.dataPartition.size=3G hw.camera.front=emulated hw.camera.back=emulated hw.keyboard=yes; do
+for kv in hw.lcd.width=1200 hw.lcd.height=2000 hw.lcd.density=240 hw.ramSize=3072 hw.cpu.ncore=2 disk.dataPartition.size=3G hw.camera.front=emulated hw.camera.back=emulated hw.keyboard=yes; do
   k=${kv%%=*}; sed -i "/^${k//./\\.}[ ]*=/d" "$CFG"; echo "$kv" >> "$CFG"
 done
 cat "$CFG" >> "$OUT/sdkmanager.txt"
