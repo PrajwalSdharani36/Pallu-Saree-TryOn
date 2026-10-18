@@ -8,7 +8,12 @@ data class Health(
     val status: String,
     @SerialName("store_name") val storeName: String,
     val engine: String,
+    @SerialName("engine_status") val engineStatus: EngineStatus? = null,
 )
+
+/** Whether the server's try-on engine is ready: "ok", "checking", "warning", "error" or "demo". */
+@Serializable
+data class EngineStatus(val state: String = "ok", val message: String = "")
 
 @Serializable
 data class Saree(

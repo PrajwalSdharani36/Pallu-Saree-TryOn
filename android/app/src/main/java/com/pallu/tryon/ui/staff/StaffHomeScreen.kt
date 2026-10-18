@@ -74,6 +74,7 @@ fun StaffHomeScreen(
                         )
                         BigButton("Scan a new customer's sarees", onNewCustomer, Modifier.fillMaxWidth())
                         ErrorNote(state.error)
+                        state.engineNote?.let { EngineNote(it) }
                         Text(
                             "Today's customers",
                             style = MaterialTheme.typography.headlineSmall,
@@ -127,5 +128,23 @@ private fun SessionRow(s: TryOnSession, onClick: () -> Unit) {
                 Icon(Icons.Filled.Favorite, contentDescription = "${favs.size} liked", tint = MaterialTheme.colorScheme.primary)
             }
         }
+    }
+}
+
+/** Demo mode, or a problem with the Google key: tells staff why looks may not be real. */
+@Composable
+private fun EngineNote(note: com.pallu.tryon.data.EngineStatus) {
+    val problem = note.state == "error" || note.state == "warning"
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (problem) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            note.message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (problem) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+        )
     }
 }

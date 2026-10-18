@@ -4,7 +4,8 @@ from .conftest import KEY, add_saree, make_jpeg, wait_for
 
 
 def test_health_and_auth(client):
-    assert client.get("/api/health").json()["engine"] == "mock"
+    h = client.get("/api/health").json()
+    assert h["engine"] == "mock" and h["engine_status"]["state"] == "demo"
     r = client.get("/api/sarees", headers={"X-API-Key": "wrong"})
     assert r.status_code == 401
     assert client.get(f"/api/sarees?key={KEY}", headers={"X-API-Key": ""}).status_code == 200

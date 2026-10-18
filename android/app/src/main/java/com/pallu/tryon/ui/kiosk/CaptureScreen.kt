@@ -1,5 +1,8 @@
 package com.pallu.tryon.ui.kiosk
 
+import android.media.AudioManager
+import android.media.MediaActionSound
+import android.media.ToneGenerator
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -104,8 +107,17 @@ private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
     var countdown by remember { mutableIntStateOf(0) }
     var error by remember { mutableStateOf<String?>(null) }
     val flash = remember { Animatable(0f) }
+    // The customer is standing back from the tablet, so the countdown is heard as well as seen.
+    val tick = remember { runCatching { ToneGenerator(AudioManager.STREAM_MUSIC, 80) }.getOrNull() }
+    val shutter = remember { MediaActionSound().apply { load(MediaActionSound.SHUTTER_CLICK) } }
+    DisposableEffect(Unit) {
+        onDispose {
+            tick?.release()
+            shutter.release()
+        }
+    }
 
-    // ring empties smoothly across the three seconds
+    // ring empties smoothly across the countdown
     val ring by animateFloatAsState(
         targetValue = if (countdown > 0) (countdown - 1) / COUNTDOWN_SECONDS.toFloat() else 1f,
         animationSpec = tween(if (countdown > 0) 1000 else 0, easing = LinearEasing),
@@ -114,10 +126,12 @@ private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
 
     LaunchedEffect(countdown) {
         if (countdown > 0) {
+            tick?.startTone(ToneGenerator.TONE_PROP_BEEP, 150)
             kotlinx.coroutines.delay(1000)
             if (countdown == 1) {
                 countdown = 0
                 scope.launch {
+                    runCatching { shutter.play(MediaActionSound.SHUTTER_CLICK) }
                     flash.snapTo(1f)
                     launch { flash.animateTo(0f, tween(450)) }
                     runCatching { camera.takeJpeg(executor) }

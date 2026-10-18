@@ -122,9 +122,10 @@ Component analysis of the saree:
 Rules:
 - Identity: keep the person's face, skin tone, hairstyle, body shape, height, weight and age exactly as in image 2. Do not beautify, slim, lighten skin or change facial features.
 - Saree fidelity: reproduce the saree's real colours, weave, motifs, zari and border from image 1. The border runs along the bottom hem and the pallu edge; the pallu shows its own distinct design; the pleats show the body fabric. Do not invent new patterns or change colours.
-- Fabric behaviour: drape and fall should match the fabric ({saree.fabric or "infer from photo"}), with natural folds, pleats and gravity.
+- Fabric behaviour: drape and fall should match the fabric ({saree.fabric or "infer from photo"}), with natural folds, pleats and gravity. Pleats are even and fan out from the waist; the saree reaches the ankles; metallic zari catches the light the way real zari does.
 - Blouse: {blouse_instruction(saree.analysis)}. Keep any jewellery the person is already wearing; add nothing else.
 - Pose and framing: standing, facing the camera, whole body from head to feet visible, centred, portrait orientation.
 - Background: clean, softly lit, warm neutral studio backdrop like a boutique trial room.
+- Photography: looks like a real photo taken in the store, soft even light, sharp focus on the fabric texture, natural colours (no filters, no painterly or illustrated look).
 - Output only the photograph: no text, logos, watermarks, borders or extra people.{gift_note}
 """

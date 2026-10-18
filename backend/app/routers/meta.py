@@ -16,7 +16,11 @@ router = APIRouter(tags=["meta"])
 @router.get("/api/health")
 def health(request: Request):
     s = get_settings()
-    return {"status": "ok", "store_name": s.store_name, "engine": request.app.state.worker.engine.name}
+    engine = request.app.state.worker.engine
+    engine_status = getattr(engine, "status", None) or {
+        "state": "demo", "message": "Demo mode: looks are placeholders. Set ENGINE=gemini for real try-ons.",
+    }
+    return {"status": "ok", "store_name": s.store_name, "engine": engine.name, "engine_status": engine_status}
 
 
 @router.get("/api/drape-styles", response_model=list[DrapeStyleOut])

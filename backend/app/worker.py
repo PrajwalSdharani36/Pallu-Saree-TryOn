@@ -76,6 +76,9 @@ class Worker:
             self._tasks.append(asyncio.create_task(self._loop(), name=f"tryon-{n}"))
         self._tasks.append(asyncio.create_task(self._purge_loop(), name="purge"))
         self._requeue_unfinished()
+        check = getattr(self.engine, "check", None)
+        if check:  # free "is the Google key OK?" check, shown on the admin page
+            self._spawn(check())
         self._reanalyze_stale()
 
     def _reanalyze_stale(self) -> None:
@@ -125,7 +128,10 @@ class Worker:
         self.queue.put_nowait(item_id)
 
     def analyze_later(self, saree_id: str) -> None:
-        t = asyncio.create_task(self.analyze(saree_id))
+        self._spawn(self.analyze(saree_id))
+
+    def _spawn(self, coro) -> None:
+        t = asyncio.create_task(coro)
         self._side.add(t)
         t.add_done_callback(self._side.discard)
 

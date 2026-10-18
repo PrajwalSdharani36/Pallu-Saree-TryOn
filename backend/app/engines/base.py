@@ -7,9 +7,10 @@ from ..prompts import SareeInfo
 class EngineError(RuntimeError):
     """Raised when the engine could not produce an image. `retryable` hints the worker."""
 
-    def __init__(self, message: str, retryable: bool = False):
+    def __init__(self, message: str, retryable: bool = False, status: int | None = None):
         super().__init__(message)
         self.retryable = retryable
+        self.status = status  # HTTP status from the provider, when there was one
 
 
 @dataclass

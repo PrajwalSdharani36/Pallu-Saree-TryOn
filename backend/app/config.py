@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     gemini_image_model: str = "gemini-nano-banana-2.1"
     # Text+vision model used to label saree components (body / border / pallu ...)
     gemini_text_model: str = "gemini-flash-latest"
+    # Ask Google not to keep the request (customer photos) for later retrieval.
+    gemini_store: bool = False
     image_size: str = "1K"  # 1K | 2K | 4K
     aspect_ratio: str = "3:4"  # portrait, full length
     request_timeout_s: float = 180.0

@@ -29,6 +29,8 @@ data class StaffState(
     val busy: Boolean = false,
     val error: String? = null,
     val session: TryOnSession? = null,
+    /** Shown on the staff home screen when looks can't be made for real (demo mode, key problem). */
+    val engineNote: com.pallu.tryon.data.EngineStatus? = null,
 )
 
 sealed interface ScanEvent {
@@ -66,6 +68,9 @@ class StaffViewModel(private val container: AppContainer) : ViewModel() {
         runCatching { repo.api.recentSessions(20) }
             .onSuccess { list -> _state.update { it.copy(recent = list, loadingRecent = false, error = null) } }
             .onFailure { e -> _state.update { it.copy(loadingRecent = false, error = repo.describe(e)) } }
+        runCatching { repo.api.health() }.onSuccess { h ->
+            _state.update { it.copy(engineNote = h.engineStatus?.takeIf { s -> s.state != "ok" && s.message.isNotBlank() }) }
+        }
     }
 
     /** Called for every camera detection and for typed codes. De-duplicates bursts from the camera. */

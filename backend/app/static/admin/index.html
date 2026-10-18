@@ -54,6 +54,9 @@ main{max-width:1240px;margin:0 auto;padding:24px 20px 64px}
 .today{font-size:1.2rem;max-width:62ch;margin:0 0 28px}
 .today b{color:var(--arakku);font-weight:700}
 .today .engine{display:block;font-size:.9rem;color:var(--muted);margin-top:4px}
+.today .engine::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background:var(--muted);vertical-align:middle}
+.today .engine.ok::before{background:var(--ok)} .today .engine.warning::before{background:var(--warn)}
+.today .engine.error{color:var(--bad)} .today .engine.error::before{background:var(--bad)}
 
 .layout{display:grid;grid-template-columns:340px 1fr;gap:32px;align-items:start}
 @media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.add{position:static}}
@@ -232,15 +235,15 @@ $("#logout").addEventListener("click", () => { KEY = ""; store.set(""); showLogi
 function loadAll(){ loadStats(); loadCatalog(); loadSessions(); }
 
 async function loadStats() {
-  const s = await api("/api/stats");
+  const [s, h] = await Promise.all([api("/api/stats"), fetch("/api/health").then((r) => r.json()).catch(() => null)]);
   const t = s.sessions === 1 ? "1 customer" : `${s.sessions} customers`;
   const speed = s.avg_generation_s ? ` Each look took about ${Math.round(s.avg_generation_s)} seconds.` : "";
   const top = s.top_sarees[0] && s.top_sarees[0].favorites ? ` Most loved: <b>${esc(s.top_sarees[0].name)}</b>.` : "";
   $("#today").innerHTML = s.sessions
     ? `Today <b>${t}</b> tried on <b>${s.tryons_done} sarees</b> and shortlisted <b>${s.favorites}</b>.${speed}${top}`
     : `No customers yet today. ${s.catalog_size} sarees are ready in the catalogue.`;
-  $("#today").insertAdjacentHTML("beforeend",
-    window.ENGINE === "mock" ? `<span class="engine">Demo mode: images are placeholders. Set ENGINE=gemini on the server for real try-ons.</span>` : "");
+  const es = h && h.engine_status;  // demo mode, or whether Google accepted the key
+  if (es) $("#today").insertAdjacentHTML("beforeend", `<span class="engine ${esc(es.state)}">${esc(es.message)}</span>`);
 }
 
 let searchTimer;
