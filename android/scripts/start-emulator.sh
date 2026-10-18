@@ -3,7 +3,9 @@
 set -x
 OUT=${OUT:-$PWD/../ui-shots}
 mkdir -p "$OUT"
-{ uname -a; cat /etc/os-release; ls -l /dev/kvm; nproc; free -g; } > "$OUT/env.txt" 2>&1
+# free disk on the small runner (unused toolchains)
+sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL 2>/dev/null
+{ uname -a; df -h /; cat /etc/os-release; ls -l /dev/kvm; nproc; free -g; } > "$OUT/env.txt" 2>&1
 SDK=${ANDROID_HOME:-$ANDROID_SDK_ROOT}
 BIN=$SDK/cmdline-tools/latest/bin
 IMG="system-images;android-31;default;x86_64"  # plain AOSP: lighter, the app needs no Play services
@@ -11,7 +13,11 @@ export ANDROID_AVD_HOME="$HOME/.android/avd"
 mkdir -p "$ANDROID_AVD_HOME"
 yes | "$BIN/sdkmanager" --install "$IMG" emulator platform-tools > "$OUT/sdkmanager.txt" 2>&1
 echo no | "$BIN/avdmanager" create avd -n tab -k "$IMG" --force -p "$ANDROID_AVD_HOME/tab.avd" >> "$OUT/sdkmanager.txt" 2>&1
-printf "hw.ramSize=3072\nhw.cpu.ncore=2\ndisk.dataPartition.size=4G\nhw.camera.front=emulated\nhw.camera.back=emulated\nhw.keyboard=yes\n" >> "$ANDROID_AVD_HOME/tab.avd/config.ini"
+CFG="$ANDROID_AVD_HOME/tab.avd/config.ini"
+for kv in hw.ramSize=3072 hw.cpu.ncore=2 disk.dataPartition.size=3G hw.camera.front=emulated hw.camera.back=emulated hw.keyboard=yes; do
+  k=${kv%%=*}; sed -i "/^${k//./\\.}[ ]*=/d" "$CFG"; echo "$kv" >> "$CFG"
+done
+cat "$CFG" >> "$OUT/sdkmanager.txt"
 "$SDK/emulator/emulator" -list-avds >> "$OUT/sdkmanager.txt" 2>&1
 export PATH="$SDK/platform-tools:$SDK/emulator:$PATH"
 nohup emulator -avd tab -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect \
