@@ -56,14 +56,17 @@ python scripts/seed_demo.py --url http://localhost:8000 --key YOUR_API_KEY
 
 1. Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
 2. In `backend/.env` set `ENGINE=gemini` and `GEMINI_API_KEY=...`.
-3. Restart the server. New sarees are analysed automatically. For sarees added in mock mode, open `POST /api/sarees/{id}/analyze` from `/docs`, or re-add them.
+3. Turn on billing for the key's Google Cloud project. Image models have no free tier.
+4. Restart the server. It checks the key for free and the admin page shows the result: a green dot means Google accepted the key. Sarees added in demo mode are re-read automatically ("Re-reading N saree(s)" in the server window).
+
+If Google renames the model or endpoint, the server tries the other API style and then `gemini-3.1-flash-image` by itself, and logs which one worked. The server window and the staff app explain the common errors in plain words, such as a wrong key or billing not switched on.
 
 Model settings live in `.env`:
 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `GEMINI_IMAGE_MODEL` | `gemini-nano-banana-2.1` | The image model that drapes the saree. `gemini-3-pro-image` is higher quality and slower; `gemini-2.5-flash-image` is the older model. |
-| `GEMINI_API_STYLE` | `interactions` | Google's current Interactions API. If your model returns 404, try `generate_content`. |
+| `GEMINI_API_STYLE` | `interactions` | Google's current Interactions API, tried first. `generate_content` is the classic API (tried automatically if the first fails). |
 | `GEMINI_TEXT_MODEL` | `gemini-flash-latest` | Reads the folded saree photo into body / border / pallu parts. |
 | `IMAGE_SIZE` | `1K` | `2K` looks better on a big mirror and costs more. |
 | `MAX_CONCURRENT_GENERATIONS` | `3` | How many sarees are draped in parallel. |
@@ -84,6 +87,7 @@ On first launch, enter the server address (for example `192.168.1.20:8000`, the 
 
 - **Any Android 8+ screen works.** That includes the big vertical 43"–65" touch kiosks, which mostly run Android inside. Layouts scale to the screen, and the AI runs on Google's servers, so a basic kiosk board is fast enough. Google Play is not needed.
 - **Camera:** a tablet's front camera works. On a big kiosk, use a 1080p USB webcam at roughly chest height; the app finds USB cameras automatically. The customer stands about 2–2.5 m back so their whole body fits the outline.
+- **Tablet on a stand (for example a Galaxy Tab S6 Lite):** mount it **upright (portrait)** so the front camera sits at the top centre, with the camera at about chest height (120–130 cm). The customer stands 1.5–2 m back. Face a window or a soft light, not with a window behind the customer. The countdown beeps each second so customers don't need to read the screen from a distance. Turn the media volume up.
 - **Lock it down:** when you choose *Try-on mirror*, Pallu can become the device's home screen. Press the Home button, pick **Pallu** and choose **Always**. The kiosk then boots straight into the mirror, and Home and Back can't take customers out.
 - **Leaving mirror mode (staff):** press and hold the store name on the start screen and enter the store key.
 - **Windows kiosks** can't run the Android app.
@@ -130,6 +134,8 @@ All endpoints except `/api/health` and `/api/drape-styles` need the `X-API-Key` 
 | `GET /api/stats` | admin | Today's customers, try-ons, speed, most-loved sarees |
 
 ## Development
+
+**UI walkthrough on a tablet emulator.** The *UI check* workflow starts a demo server, then walks the real app on an emulator sized like a Galaxy Tab S6 Lite, in portrait and landscape, plus a phone for the staff screens. It screenshots every screen into the `ci-shots` branch. The test is `android/app/src/androidTest/.../MirrorWalkthroughTest.kt`.
 
 ```bash
 cd backend
