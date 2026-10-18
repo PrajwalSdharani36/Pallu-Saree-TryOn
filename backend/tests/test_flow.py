@@ -150,3 +150,31 @@ def test_gift_flow_staff_uploads_photo(client):
     assert r.status_code == 200 and r.json()["drape_style"] == "bengali"
     done = wait_for(client, sess["id"], lambda s: s["status"] == "ready")
     assert done["done"] == 1 and done["mode"] == "gift"
+
+
+def test_switching_to_real_engine_rereads_demo_analysis(client):
+    import asyncio
+
+    from app.worker import Worker
+    from app.models import AnalysisStatus, Saree
+    from app.db import get_engine
+    from sqlmodel import Session
+
+    s = add_saree(client, "A", "A1")
+    client.post(f"/api/sarees/{s['id']}/analyze")  # mock analysis, tagged _engine=mock
+
+    class FakeReal:
+        name = "gemini"
+        async def analyze_saree(self, jpeg):
+            return {"body": {"color": "red"}, "summary": "real"}
+
+    w = Worker(FakeReal(), client.app.state.worker.s)
+
+    async def go():
+        w._reanalyze_stale()
+        await asyncio.gather(*list(w._side))
+
+    asyncio.run(go())
+    with Session(get_engine()) as db:
+        row = db.get(Saree, s["id"])
+        assert row.analysis_status == AnalysisStatus.done and '"real"' in row.analysis_json

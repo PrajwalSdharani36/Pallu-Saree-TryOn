@@ -76,6 +76,28 @@ class Worker:
             self._tasks.append(asyncio.create_task(self._loop(), name=f"tryon-{n}"))
         self._tasks.append(asyncio.create_task(self._purge_loop(), name="purge"))
         self._requeue_unfinished()
+        self._reanalyze_stale()
+
+    def _reanalyze_stale(self) -> None:
+        """After switching from the demo engine to a real one, re-read every saree the demo engine
+        only guessed at (or that failed / never finished), so their drapes come out right."""
+        if self.engine.name == "mock":
+            return
+        with Session(get_engine()) as db:
+            rows = db.exec(select(Saree).where(Saree.active == True)).all()  # noqa: E712
+            stale = [
+                s.id for s in rows
+                if s.analysis_status != AnalysisStatus.done or '"_engine": "mock"' in (s.analysis_json or "")
+            ]
+            for sid in stale:
+                saree = db.get(Saree, sid)
+                saree.analysis_status = AnalysisStatus.pending
+                db.add(saree)
+            db.commit()
+        for sid in stale:
+            self.analyze_later(sid)
+        if stale:
+            log.info("Re-reading %d saree(s) with the %s engine", len(stale), self.engine.name)
 
     async def stop(self) -> None:
         for t in self._tasks + list(self._side):
