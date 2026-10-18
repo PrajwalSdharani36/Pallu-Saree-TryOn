@@ -6,6 +6,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
@@ -41,6 +42,9 @@ interface PalluApi {
     suspend fun removeItem(@Path("ref") ref: String, @Path("itemId") itemId: String): TryOnSession
 
     // ---- kiosk ----
+    @PATCH("api/sessions/{ref}")
+    suspend fun updateSession(@Path("ref") ref: String, @Body body: SessionUpdateBody): TryOnSession
+
     @GET("api/session-lookup")
     suspend fun lookup(@Query("q") q: String): TryOnSession
 

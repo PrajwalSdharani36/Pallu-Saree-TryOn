@@ -1,6 +1,5 @@
 package com.pallu.tryon.ui.staff
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -140,7 +139,7 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
                     modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
             }
-            AnimatedVisibility(
+            androidx.compose.animation.AnimatedVisibility(
                 visible = toast != null,
                 enter = slideInVertically { -it } + fadeIn(),
                 exit = slideOutVertically { -it } + fadeOut(),

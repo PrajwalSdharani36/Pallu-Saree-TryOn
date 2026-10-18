@@ -110,7 +110,7 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
                             state.mode == TryOnMode.SELF, { vm.setMode(TryOnMode.SELF) }, Modifier.weight(1f),
                         )
                         ChoiceCard(
-                            Icons.Outlined.CardGiftcard, "Someone else", "Choose a photo of them. Good for gifts.",
+                            Icons.Outlined.CardGiftcard, "Someone else", "Send our staff a photo of them. Good for gifts.",
                             state.mode == TryOnMode.GIFT, { vm.setMode(TryOnMode.GIFT) }, Modifier.weight(1f),
                         )
                     }
@@ -158,7 +158,7 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
                     QuietButton("Cancel", onBack)
                     Spacer(Modifier.weight(1f))
                     GoldButton(
-                        text = if (state.mode == TryOnMode.GIFT) "Choose their photo" else "Take my photo",
+                        text = if (state.mode == TryOnMode.GIFT) "Continue" else "Take my photo",
                         icon = if (state.mode == TryOnMode.GIFT) Icons.Filled.PhotoLibrary else Icons.Filled.PhotoCamera,
                         onClick = onContinue,
                         enabled = state.mode != null && state.consent,

@@ -138,6 +138,16 @@ class StaffViewModel(private val container: AppContainer) : ViewModel() {
         pollJob = null
     }
 
+    /** Gift mode: the customer sent a photo of the person to the staff member, who adds it here. */
+    fun uploadGiftPhoto(sessionId: String, jpeg: ByteArray, onDone: () -> Unit) = viewModelScope.launch {
+        _state.update { it.copy(busy = true, error = null) }
+        val repo = container.repository()
+        // empty drape style keeps whatever the customer chose at the mirror
+        runCatching { repo.uploadPhoto(sessionId, jpeg, mode = "gift", drapeStyle = "") }
+            .onSuccess { s -> _state.update { it.copy(busy = false, session = s) }; onDone() }
+            .onFailure { e -> _state.update { it.copy(busy = false, error = repo.describe(e)) } }
+    }
+
     fun removeItem(sessionId: String, itemId: String) = viewModelScope.launch {
         val repo = container.repository()
         runCatching { repo.api.removeItem(sessionId, itemId) }

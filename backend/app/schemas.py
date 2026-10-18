@@ -145,6 +145,12 @@ class SessionCreate(BaseModel):
     customer_label: str = ""
 
 
+class SessionUpdate(BaseModel):
+    drape_style: Optional[str] = None
+    mode: Optional[str] = Field(default=None, pattern="^(self|gift)$")
+    customer_label: Optional[str] = Field(default=None, max_length=60)
+
+
 class AddItem(BaseModel):
     barcode: Optional[str] = None
     saree_id: Optional[str] = None

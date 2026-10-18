@@ -35,12 +35,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.pallu.tryon.data.AppContainer
 import com.pallu.tryon.data.AppMode
 import com.pallu.tryon.data.AppSettings
+import com.pallu.tryon.data.KioskLock
 import com.pallu.tryon.data.normalizeServerUrl
 import com.pallu.tryon.ui.common.BigButton
 import com.pallu.tryon.ui.common.ErrorNote
@@ -51,6 +53,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SetupScreen(container: AppContainer, initial: AppSettings, onDone: (AppMode) -> Unit) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var url by remember { mutableStateOf(initial.serverUrl) }
     var key by remember { mutableStateOf(initial.apiKey) }
     var mode by remember { mutableStateOf(initial.mode) }
@@ -129,6 +132,7 @@ fun SetupScreen(container: AppContainer, initial: AppSettings, onDone: (AppMode)
                                             storeName = health.storeName,
                                         )
                                     )
+                                    KioskLock.setHomeScreen(context, chosen == AppMode.KIOSK)
                                     busy = false
                                     onDone(chosen)
                                 }

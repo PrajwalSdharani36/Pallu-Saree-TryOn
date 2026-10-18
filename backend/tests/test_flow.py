@@ -135,3 +135,18 @@ def test_delete_photo_now(client):
                 files={"photo": ("p.jpg", make_jpeg(), "image/jpeg")})
     s = client.delete(f"/api/sessions/{sess['id']}/photo").json()
     assert not s["has_photo"] and s["status"] == "open"
+
+
+def test_gift_flow_staff_uploads_photo(client):
+    add_saree(client, "A", "A1")
+    sess = client.post("/api/sessions", json={"barcodes": ["A1"]}).json()
+    # kiosk: customer picks "someone else" + Bengali drape, then waits
+    s = client.patch(f"/api/sessions/{sess['code']}", json={"mode": "gift", "drape_style": "bengali"}).json()
+    assert s["mode"] == "gift" and s["drape_style"] == "bengali" and not s["has_photo"]
+    assert client.patch(f"/api/sessions/{sess['id']}", json={"drape_style": "saree-wrap"}).status_code == 422
+    # staff phone uploads the photo the customer sent; empty drape keeps the kiosk's choice
+    r = client.post(f"/api/sessions/{sess['id']}/photo", data={"consent": "true", "mode": "gift", "drape_style": ""},
+                    files={"photo": ("p.jpg", make_jpeg(), "image/jpeg")})
+    assert r.status_code == 200 and r.json()["drape_style"] == "bengali"
+    done = wait_for(client, sess["id"], lambda s: s["status"] == "ready")
+    assert done["done"] == 1 and done["mode"] == "gift"

@@ -1,6 +1,7 @@
 package com.pallu.tryon.ui.kiosk
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +34,8 @@ fun KioskFrame(
 ) {
     val view = LocalView.current
     val latestOnIdle = rememberUpdatedState(onIdle)
+    // Customers use the on-screen buttons; the system back gesture does nothing on the mirror.
+    BackHandler(enabled = true) { vm.touch() }
 
     DisposableEffect(view) {
         view.keepScreenOn = true

@@ -102,6 +102,7 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
             val side = 56.dp * k.coerceAtLeast(0.6f)
+            val peek = (maxWidth * 0.16f).coerceIn(40.dp, 140.dp)
             Column(Modifier.fillMaxSize()) {
                 // ---- header
                 Row(
@@ -125,7 +126,6 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                 }
 
                 // ---- the gallery: neighbours peek in, smaller and dimmer
-                val peek = (maxWidth * 0.16f).coerceIn(40.dp, 140.dp)
                 HorizontalPager(
                     state = pager,
                     modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 20.dp),

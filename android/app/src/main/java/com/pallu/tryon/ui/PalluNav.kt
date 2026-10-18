@@ -29,6 +29,8 @@ import com.pallu.tryon.ui.kiosk.KioskFrame
 import com.pallu.tryon.ui.kiosk.KioskViewModel
 import com.pallu.tryon.ui.kiosk.ResultsScreen
 import com.pallu.tryon.ui.kiosk.ThankYouScreen
+import com.pallu.tryon.ui.kiosk.TryOnMode
+import com.pallu.tryon.ui.kiosk.WaitGiftScreen
 import com.pallu.tryon.ui.setup.SetupScreen
 import com.pallu.tryon.ui.staff.ScanScreen
 import com.pallu.tryon.ui.staff.SessionScreen
@@ -48,6 +50,7 @@ object Routes {
     const val KIOSK_CAPTURE = "kiosk/capture"
     const val KIOSK_RESULTS = "kiosk/results"
     const val KIOSK_THANKS = "kiosk/thanks"
+    const val KIOSK_WAIT_GIFT = "kiosk/wait-gift"
 }
 
 @Composable
@@ -131,7 +134,10 @@ private fun Graph(
                     vm = kioskVm,
                     storeName = settings.storeName,
                     apiKey = settings.apiKey,
-                    onSession = { nav.navigate(Routes.KIOSK_CONSENT) },
+                    onSession = { hasPhoto ->
+                        // a staff member may already have added a gift photo: go straight to the looks
+                        nav.navigate(if (hasPhoto) Routes.KIOSK_RESULTS else Routes.KIOSK_CONSENT)
+                    },
                     onExitKiosk = { nav.navigate(Routes.SETUP) },
                 )
             }
@@ -141,7 +147,10 @@ private fun Graph(
                 ConsentScreen(
                     vm = kioskVm,
                     onBack = { kioskVm.reset(); goRoot(Routes.KIOSK) },
-                    onContinue = { nav.navigate(Routes.KIOSK_CAPTURE) },
+                    onContinue = {
+                        val gift = kioskVm.state.value.mode == TryOnMode.GIFT
+                        nav.navigate(if (gift) Routes.KIOSK_WAIT_GIFT else Routes.KIOSK_CAPTURE)
+                    },
                 )
             }
         }
@@ -151,6 +160,16 @@ private fun Graph(
                     vm = kioskVm,
                     onBack = { nav.popBackStack() },
                     onUploaded = { nav.navigate(Routes.KIOSK_RESULTS) { popUpTo(Routes.KIOSK_CONSENT) { inclusive = true } } },
+                )
+            }
+        }
+        composable(Routes.KIOSK_WAIT_GIFT) {
+            KioskFrame(kioskVm, settings.kioskIdleSeconds * 3, onIdle = { goRoot(Routes.KIOSK) }) {
+                WaitGiftScreen(
+                    vm = kioskVm,
+                    onArrived = { nav.navigate(Routes.KIOSK_RESULTS) { popUpTo(Routes.KIOSK_CONSENT) { inclusive = true } } },
+                    onUseThisDevice = { nav.navigate(Routes.KIOSK_CAPTURE) },
+                    onCancel = { nav.popBackStack() },
                 )
             }
         }

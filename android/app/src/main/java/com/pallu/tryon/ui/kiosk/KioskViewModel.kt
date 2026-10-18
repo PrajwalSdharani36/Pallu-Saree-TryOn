@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.pallu.tryon.data.AppContainer
 import com.pallu.tryon.data.FavoriteBody
 import com.pallu.tryon.data.Saree
+import com.pallu.tryon.data.SessionUpdateBody
 import com.pallu.tryon.data.SessionItem
 import com.pallu.tryon.data.TryOnSession
 import kotlinx.coroutines.Job
@@ -68,8 +69,11 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
 
     fun clearError() = _state.update { it.copy(error = null) }
 
-    /** From the QR camera or the typed code. */
-    fun lookup(code: String, onFound: () -> Unit) {
+    /**
+     * From the QR camera or the typed code. [onFound] gets true when the session already has a photo
+     * (a staff member uploaded a gift photo), so the mirror can go straight to the looks.
+     */
+    fun lookup(code: String, onFound: (alreadyHasPhoto: Boolean) -> Unit) {
         val c = code.trim()
         if (c.isEmpty() || _state.value.lookingUp) return
         val now = System.currentTimeMillis()
@@ -85,9 +89,13 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
                         _state.update { it.copy(lookingUp = false, error = "This QR code has already been used. Ask our staff for a new one.") }
                     } else {
                         _state.update {
-                            KioskState(session = s, drapeStyle = s.drapeStyle, mode = null, showcase = it.showcase)
+                            KioskState(
+                                session = s, drapeStyle = s.drapeStyle, showcase = it.showcase,
+                                mode = if (s.hasPhoto && s.mode == "gift") TryOnMode.GIFT else null,
+                            )
                         }
-                        onFound()
+                        if (s.hasPhoto) startPolling()
+                        onFound(s.hasPhoto)
                     }
                 }
                 .onFailure { e ->
@@ -124,6 +132,38 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
                 }
                 .onFailure { e -> _state.update { it.copy(uploading = false, error = repo.describe(e)) } }
         }
+    }
+
+    /**
+     * Gift mode: the customer sends the photo to a staff member, who uploads it from the staff phone.
+     * Save the customer's choices now, then wait here until the photo arrives.
+     */
+    fun waitForGiftPhoto(onArrived: () -> Unit) {
+        val session = _state.value.session ?: return
+        pollJob?.cancel()
+        pollJob = viewModelScope.launch {
+            val repo = container.repository()
+            runCatching {
+                repo.api.updateSession(session.id, SessionUpdateBody(drapeStyle = _state.value.drapeStyle, mode = TryOnMode.GIFT.api))
+            }.onSuccess { s -> _state.update { it.copy(session = s) } }
+                .onFailure { e -> _state.update { it.copy(error = repo.describe(e)) } }
+            while (isActive) {
+                delay(2500)
+                val s = runCatching { repo.api.session(session.id) }.getOrNull() ?: continue
+                _state.update { it.copy(session = s) }
+                if (s.isClosed) return@launch
+                if (s.hasPhoto) {
+                    touch()
+                    startPolling()
+                    onArrived()
+                    return@launch
+                }
+            }
+        }
+    }
+
+    fun stopWaiting() {
+        pollJob?.cancel()
     }
 
     private fun startPolling() {

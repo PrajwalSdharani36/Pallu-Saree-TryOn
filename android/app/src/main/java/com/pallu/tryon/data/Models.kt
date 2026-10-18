@@ -79,6 +79,12 @@ data class AddItemBody(val barcode: String? = null, @SerialName("saree_id") val 
 @Serializable
 data class FavoriteBody(val favorite: Boolean)
 
+@Serializable
+data class SessionUpdateBody(
+    @SerialName("drape_style") val drapeStyle: String? = null,
+    val mode: String? = null,
+)
+
 enum class AppMode { STAFF, KIOSK }
 
 /** Drape styles shown to customers; ids match the backend's DRAPE_STYLES. */

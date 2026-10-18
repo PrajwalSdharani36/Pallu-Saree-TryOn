@@ -1,5 +1,23 @@
 package com.pallu.tryon.ui.staff
 
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import com.pallu.tryon.ui.common.readImageAsJpeg
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -72,6 +90,16 @@ fun SessionScreen(
         onDispose { vm.stopWatching() }
     }
     val s = state.session?.takeIf { it.id == sessionId }
+    val context = LocalContext.current
+    var pickedPhoto by remember { mutableStateOf<ByteArray?>(null) }
+    var photoError by remember { mutableStateOf<String?>(null) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            runCatching { readImageAsJpeg(context, uri) }
+                .onSuccess { pickedPhoto = it; photoError = null }
+                .onFailure { photoError = it.message ?: "Couldn't open that photo." }
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         StoreHeader(
@@ -124,7 +152,16 @@ fun SessionScreen(
                         )
                     }
                 }
-                item { ErrorNote(state.error, Modifier.widthIn(max = 520.dp)) }
+                if (!s.isClosed && !s.hasPhoto) {
+                    item {
+                        GiftPhotoCard(
+                            waiting = s.mode == "gift",
+                            onPick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                            modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth(),
+                        )
+                    }
+                }
+                item { ErrorNote(state.error ?: photoError, Modifier.widthIn(max = 520.dp)) }
                 items(s.items, key = { it.id }) { item ->
                     ItemRow(item, Modifier.widthIn(max = 520.dp).animateItem())
                 }
@@ -145,6 +182,84 @@ fun SessionScreen(
             BigButton("Next customer", onNewCustomer, Modifier.weight(1.3f))
         }
     }
+
+    pickedPhoto?.let { jpeg ->
+        GiftPhotoDialog(
+            jpeg = jpeg,
+            busy = state.busy,
+            onUpload = { vm.uploadGiftPhoto(sessionId, jpeg) { pickedPhoto = null } },
+            onDismiss = { pickedPhoto = null },
+        )
+    }
+}
+
+/** Shown until the session has a photo; highlighted when the customer is waiting at the mirror for one. */
+@Composable
+private fun GiftPhotoCard(waiting: Boolean, onPick: () -> Unit, modifier: Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = if (waiting) Color(0xFFFBF3DF) else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (waiting) Zari else MaterialTheme.colorScheme.outline),
+    ) {
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.CardGiftcard, contentDescription = null, tint = Arakku, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (waiting) "Waiting at the mirror for a gift photo" else "Buying as a gift?",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    "Ask the customer to WhatsApp you a photo of the person, then add it here.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            OutlinedButton(onClick = onPick, shape = RoundedCornerShape(10.dp)) { Text("Add photo") }
+        }
+    }
+}
+
+@Composable
+private fun GiftPhotoDialog(jpeg: ByteArray, busy: Boolean, onUpload: () -> Unit, onDismiss: () -> Unit) {
+    var permission by remember { mutableStateOf(false) }
+    val preview = remember(jpeg) {
+        runCatching {
+            val opts = BitmapFactory.Options().apply { inSampleSize = 4 }
+            BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size, opts)?.asImageBitmap()
+        }.getOrNull()
+    }
+    AlertDialog(
+        onDismissRequest = { if (!busy) onDismiss() },
+        title = { Text("Use this photo?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (preview != null) {
+                    Image(
+                        preview, contentDescription = "Gift photo",
+                        modifier = Modifier.fillMaxWidth().height(260.dp).clip(RoundedCornerShape(10.dp)),
+                        contentScale = ContentScale.Fit,
+                    )
+                }
+                Row(
+                    Modifier.fillMaxWidth().toggleable(value = permission, onValueChange = { permission = it }, role = Role.Checkbox),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = permission, onCheckedChange = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "The customer confirmed they have this person's permission to use the photo.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onUpload, enabled = permission && !busy) { Text(if (busy) "Sending…" else "Start the looks") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") } },
+    )
 }
 
 private val STEPS = listOf("Scanned", "At mirror", "Draping", "Viewing", "Finished")

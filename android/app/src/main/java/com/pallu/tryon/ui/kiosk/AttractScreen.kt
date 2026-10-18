@@ -58,7 +58,7 @@ fun AttractScreen(
     vm: KioskViewModel,
     storeName: String,
     apiKey: String,
-    onSession: () -> Unit,
+    onSession: (alreadyHasPhoto: Boolean) -> Unit,
     onExitKiosk: () -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -70,6 +70,7 @@ fun AttractScreen(
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
             val wide = maxWidth > maxHeight
+            val narrow = maxWidth < 560.dp
             val side = if (wide) 72.dp else 64.dp * k.coerceAtLeast(0.6f)
 
             Column(
@@ -105,7 +106,7 @@ fun AttractScreen(
                     Headline(k)
                     SareeFan(state.showcase, Modifier.fillMaxWidth().height(330.dp * k))
                     Spacer(Modifier.weight(1f))
-                    StartCard(vm, hasCamera, code, { code = it }, onSession, vertical = maxWidth < 560.dp, modifier = Modifier.fillMaxWidth())
+                    StartCard(vm, hasCamera, code, { code = it }, onSession, vertical = narrow, modifier = Modifier.fillMaxWidth())
                 }
 
                 ErrorNote(state.error)
@@ -175,7 +176,7 @@ private fun StartCard(
     hasCamera: Boolean,
     code: String,
     onCode: (String) -> Unit,
-    onSession: () -> Unit,
+    onSession: (Boolean) -> Unit,
     vertical: Boolean,
     modifier: Modifier = Modifier,
 ) {

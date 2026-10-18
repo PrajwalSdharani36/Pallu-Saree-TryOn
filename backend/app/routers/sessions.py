@@ -12,7 +12,7 @@ from ..config import get_settings
 from ..db import get_db
 from ..models import ItemStatus, new_session_code, Saree, SessionItem, SessionStatus, TryOnSession, utcnow
 from ..prompts import DRAPE_STYLES
-from ..schemas import QR_PREFIX, AddItem, FavoriteIn, SessionCreate, SessionOut
+from ..schemas import QR_PREFIX, AddItem, FavoriteIn, SessionCreate, SessionOut, SessionUpdate
 from ..security import require_key
 from ..worker import refresh_session_status, wipe_session_media
 from .sarees import read_upload
@@ -122,6 +122,24 @@ def lookup_session(q: str, db: Session = Depends(get_db)):
 @router.get("/api/sessions/{ref}", response_model=SessionOut)
 def get_session(ref: str, db: Session = Depends(get_db)):
     return out(db, find_session(db, ref))
+
+
+@router.patch("/api/sessions/{ref}", response_model=SessionOut)
+def update_session(ref: str, body: SessionUpdate, db: Session = Depends(get_db)):
+    """Kiosk saves the customer's choices (gift mode, drape style) before the photo arrives,
+    e.g. while a staff member uploads a photo the customer sent them for a gift."""
+    sess = find_session(db, ref)
+    require_open(sess)
+    if body.drape_style is not None:
+        sess.drape_style = check_drape(body.drape_style)
+    if body.mode is not None:
+        sess.mode = body.mode
+    if body.customer_label is not None:
+        sess.customer_label = body.customer_label
+    db.add(sess)
+    db.commit()
+    db.refresh(sess)
+    return out(db, sess)
 
 
 @router.post("/api/sessions/{ref}/items", response_model=SessionOut)
