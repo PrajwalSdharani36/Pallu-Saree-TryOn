@@ -100,12 +100,13 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
 
     KioskPage {
         BoxWithConstraints(Modifier.fillMaxSize()) {
-            val k = headlineSize(maxWidth)
+            val short = maxHeight < 900.dp // landscape tablet: give the looks every bit of height
+            val k = headlineSize(maxWidth) * (if (short) 0.8f else 1f)
             val side = 56.dp * k.coerceAtLeast(0.6f)
             Column(Modifier.fillMaxSize()) {
                 // ---- header
                 Row(
-                    Modifier.fillMaxWidth().padding(start = side, end = side, top = 34.dp * k),
+                    Modifier.fillMaxWidth().padding(start = side, end = side, top = if (short) 20.dp else 34.dp * k),
                     verticalAlignment = Alignment.Bottom,
                 ) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -129,7 +130,7 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
 
                 // ---- the gallery: neighbours peek in, smaller and dimmer. Each look keeps the photo's
                 // 3:4 portrait shape, so on a landscape screen the drape isn't cropped to a strip.
-                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(top = 20.dp)) {
+                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(top = if (short) 10.dp else 20.dp)) {
                 val minPeek = (maxWidth * 0.16f).coerceIn(40.dp, 140.dp)
                 val pageW = minOf(maxWidth - minPeek * 2, (maxHeight - 12.dp) * 0.75f)
                 val peek = (maxWidth - pageW) / 2
@@ -160,7 +161,7 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                 }
 
                 Row(
-                    Modifier.fillMaxWidth().padding(top = 14.dp),
+                    Modifier.fillMaxWidth().padding(top = if (short) 8.dp else 14.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -173,14 +174,14 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                 LazyRow(
                     state = strip,
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = side, vertical = 14.dp),
+                    contentPadding = PaddingValues(horizontal = side, vertical = if (short) 8.dp else 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
                 ) {
                     itemsIndexed(items, key = { _, it -> it.id }) { index, item ->
                         val selected = index == pager.currentPage
                         Box(
                             Modifier
-                                .size(72.dp, 94.dp)
+                                .size(if (short) 52.dp else 72.dp, if (short) 68.dp else 94.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .border(if (selected) 3.dp else 1.dp, if (selected) ZariLight else MirrorLine, RoundedCornerShape(10.dp))
                                 .clickable { scope.launch { pager.animateScrollToPage(index) } }
@@ -198,7 +199,7 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
 
                 ErrorNote(state.error, Modifier.padding(horizontal = side))
                 Row(
-                    Modifier.fillMaxWidth().padding(start = side, end = side, bottom = 22.dp, top = 4.dp),
+                    Modifier.fillMaxWidth().padding(start = side, end = side, bottom = if (short) 12.dp else 22.dp, top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OutlineButton("Retake photo", { vm.setPhoto(null); onRetake() })
@@ -286,7 +287,7 @@ private fun InfoPanel(item: SessionItem, onFavorite: () -> Unit, modifier: Modif
     val tap = { if (!item.favorite) bump += 1; onFavorite() }
     val meta = listOf(item.saree.fabric, rupees(item.saree.price)).filter { it.isNotBlank() }.joinToString(", ")
     BoxWithConstraints(modifier.fillMaxWidth()) {
-        val narrow = maxWidth < 420.dp
+        val narrow = maxWidth < 330.dp
         Row(
             Modifier
                 .fillMaxWidth()

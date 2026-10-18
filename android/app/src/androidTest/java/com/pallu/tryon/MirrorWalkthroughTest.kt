@@ -114,7 +114,7 @@ class MirrorWalkthroughTest {
 
         find(By.text("Your looks"), 20_000)
         shot("09_draping", settle = 2500)
-        find(By.textContains("Shortlist"), 60_000)
+        findLook(60_000)
         shot("10_first_look")
         find(By.textStartsWith("All 4 are ready"), 90_000)
         tapShortlist()
@@ -149,7 +149,7 @@ class MirrorWalkthroughTest {
 
         uploadGiftPhoto(s.id) // what the staff phone does when the customer WhatsApps the photo
         find(By.text("Your looks"), 30_000)
-        find(By.textContains("Shortlist"), 60_000)
+        findLook(60_000)
         shot("22_gift_look")
         find(By.text("I'm done")).click()
         find(By.text("Thank you"), 20_000)
@@ -269,6 +269,16 @@ class MirrorWalkthroughTest {
     private fun typeCode(code: String) {
         find(By.clazz("android.widget.EditText")).text = code
         SystemClock.sleep(300)
+    }
+
+    /** A finished look shows a Shortlist button (text on wide cards, icon on narrow ones). */
+    private fun findLook(timeout: Long) {
+        val end = SystemClock.uptimeMillis() + timeout
+        while (SystemClock.uptimeMillis() < end) {
+            if (device.hasObject(By.textContains("Shortlist")) || device.hasObject(By.desc("Shortlist"))) return
+            SystemClock.sleep(500)
+        }
+        error("No finished look after ${timeout / 1000}s")
     }
 
     private fun clickRetry(sel: BySelector) {
