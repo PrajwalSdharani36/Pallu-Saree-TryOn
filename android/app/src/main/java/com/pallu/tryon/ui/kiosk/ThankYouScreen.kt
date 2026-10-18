@@ -6,6 +6,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -79,7 +81,8 @@ fun ThankYouScreen(vm: KioskViewModel, onDone: () -> Unit) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
             Column(
-                Modifier.fillMaxSize().padding(horizontal = 56.dp * k.coerceAtLeast(0.6f), vertical = 40.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 56.dp * k.coerceAtLeast(0.6f), vertical = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
             ) {

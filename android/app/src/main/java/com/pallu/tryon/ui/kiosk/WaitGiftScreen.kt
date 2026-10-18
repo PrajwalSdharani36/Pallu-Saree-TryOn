@@ -1,6 +1,8 @@
 package com.pallu.tryon.ui.kiosk
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -49,7 +51,8 @@ fun WaitGiftScreen(
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
             Column(
-                Modifier.fillMaxSize().padding(horizontal = 56.dp * k.coerceAtLeast(0.6f), vertical = 40.dp),
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    .padding(horizontal = 56.dp * k.coerceAtLeast(0.6f), vertical = 40.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(26.dp, Alignment.CenterVertically),
             ) {

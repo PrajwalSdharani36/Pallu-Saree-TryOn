@@ -4,6 +4,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -70,59 +72,53 @@ fun AttractScreen(
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
             val wide = maxWidth > maxHeight
-            val narrow = maxWidth < 560.dp
+            // Phones (and very narrow tablets): one scrolling column with everything sized down.
+            val compact = !wide && maxWidth < 600.dp
+            val roomForFan = maxHeight > 640.dp
             val side = if (wide) 72.dp else 64.dp * k.coerceAtLeast(0.6f)
 
-            Column(
-                Modifier.fillMaxSize().padding(start = side, end = side, top = 56.dp * k, bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp * k),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    // Hidden staff exit: press and hold the store name.
-                    modifier = Modifier.combinedClickable(onClick = {}, onLongClick = { askExit = true }),
+            if (compact) {
+                Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
-                    SareeMark(Modifier.size(30.dp))
-                    Spacer(Modifier.size(12.dp))
-                    Text(
-                        storeName.ifBlank { "Pallu" },
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp),
-                        color = ZariLight,
+                    StoreName(storeName) { askExit = true }
+                    Headline(0.5f)
+                    if (roomForFan) SareeFan(state.showcase, Modifier.fillMaxWidth().height(190.dp))
+                    StartCard(
+                        vm, hasCamera, code, { code = it }, onSession,
+                        vertical = true, compact = true, modifier = Modifier.fillMaxWidth(),
                     )
+                    ErrorNote(state.error)
+                    PrivacyLine()
                 }
-
-                if (wide) {
-                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(48.dp)) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                            Headline(k)
-                            SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
+            } else {
+                Column(
+                    Modifier.fillMaxSize().padding(start = side, end = side, top = 56.dp * k, bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp * k),
+                ) {
+                    StoreName(storeName) { askExit = true }
+                    if (wide) {
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(48.dp)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                                Headline(k)
+                                SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
+                            }
+                            StartCard(
+                                vm = vm, hasCamera = hasCamera, code = code, onCode = { code = it },
+                                onSession = onSession, vertical = true,
+                                modifier = Modifier.widthIn(max = 460.dp).fillMaxWidth(0.42f),
+                            )
                         }
-                        StartCard(
-                            vm = vm, hasCamera = hasCamera, code = code, onCode = { code = it },
-                            onSession = onSession, vertical = true, modifier = Modifier.widthIn(max = 460.dp).fillMaxWidth(0.42f),
-                        )
+                    } else {
+                        Headline(k)
+                        SareeFan(state.showcase, Modifier.fillMaxWidth().height(330.dp * k))
+                        Spacer(Modifier.weight(1f))
+                        StartCard(vm, hasCamera, code, { code = it }, onSession, vertical = false, modifier = Modifier.fillMaxWidth())
                     }
-                } else {
-                    Headline(k)
-                    SareeFan(state.showcase, Modifier.fillMaxWidth().height(330.dp * k))
-                    Spacer(Modifier.weight(1f))
-                    StartCard(vm, hasCamera, code, { code = it }, onSession, vertical = narrow, modifier = Modifier.fillMaxWidth())
-                }
-
-                ErrorNote(state.error)
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Filled.Lock, contentDescription = null, tint = OnMirrorFaint, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(8.dp))
-                    Text(
-                        "Your photo is only used to show you these sarees, and is deleted when you finish.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = OnMirrorFaint,
-                        textAlign = TextAlign.Center,
-                    )
+                    ErrorNote(state.error)
+                    PrivacyLine()
                 }
             }
         }
@@ -154,6 +150,42 @@ fun AttractScreen(
     }
 }
 
+/** Store name; pressing and holding it is the hidden staff exit from mirror mode. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun StoreName(storeName: String, onLongPress: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.combinedClickable(onClick = {}, onLongClick = onLongPress),
+    ) {
+        SareeMark(Modifier.size(30.dp))
+        Spacer(Modifier.size(12.dp))
+        Text(
+            storeName.ifBlank { "Pallu" },
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp),
+            color = ZariLight,
+        )
+    }
+}
+
+@Composable
+private fun PrivacyLine() {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Lock, contentDescription = null, tint = OnMirrorFaint, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.size(8.dp))
+        Text(
+            "Your photo is only used to show you these sarees, and is deleted when you finish.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = OnMirrorFaint,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
 @Composable
 private fun Headline(k: Float) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -179,6 +211,7 @@ private fun StartCard(
     onSession: (Boolean) -> Unit,
     vertical: Boolean,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val scanner: @Composable (Modifier) -> Unit = { m ->
@@ -197,13 +230,20 @@ private fun StartCard(
     }
     val words: @Composable (Modifier) -> Unit = { m ->
         Column(m, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Hold up the QR code our staff gave you", fontFamily = Rozha, fontSize = 32.sp, lineHeight = 38.sp, color = OnMirror)
+            Text(
+                "Hold up the QR code our staff gave you",
+                fontFamily = Rozha,
+                fontSize = if (compact) 24.sp else 32.sp,
+                lineHeight = if (compact) 29.sp else 38.sp,
+                color = OnMirror,
+            )
             Muted("Or type the 6-letter code", scale = 0.82f)
-            CodeBoxes(code, onCode, onDone = { vm.lookup(code, onSession) }, boxSize = 44.dp)
+            CodeBoxes(code, onCode, onDone = { vm.lookup(code, onSession) }, boxSize = if (compact) 38.dp else 44.dp)
             GoldButton(
                 if (state.lookingUp) "Finding your sarees…" else "Start",
                 onClick = { vm.lookup(code, onSession) },
                 enabled = code.length == 6 && !state.lookingUp,
+                modifier = if (compact) Modifier.fillMaxWidth() else Modifier,
             )
         }
     }
@@ -212,11 +252,12 @@ private fun StartCard(
             .clip(RoundedCornerShape(22.dp))
             .background(MirrorRaised)
             .border(1.dp, ZariLight.copy(alpha = 0.28f), RoundedCornerShape(22.dp))
-            .padding(26.dp),
+            .padding(if (compact) 18.dp else 26.dp),
     ) {
         if (vertical) {
             Column(verticalArrangement = Arrangement.spacedBy(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                scanner(Modifier.fillMaxWidth().aspectRatio(1f))
+                // capped so the camera window never pushes the code boxes off a phone screen
+                scanner(Modifier.fillMaxWidth(if (compact) 0.8f else 1f).widthIn(max = 260.dp).aspectRatio(1f))
                 words(Modifier.fillMaxWidth())
             }
         } else {
