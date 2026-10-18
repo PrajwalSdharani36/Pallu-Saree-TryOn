@@ -1,0 +1,95 @@
+name: UI check (tablet emulator)
+
+# Walks through the real app on an emulator sized like a Galaxy Tab S6 Lite (portrait and
+# landscape) plus a phone for the staff screens, against a demo server, and publishes every
+# screenshot to the `ci-shots` branch.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["android/**", "backend/app/**", ".github/workflows/ui-check.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ui-check
+  cancel-in-progress: true
+
+jobs:
+  walkthrough:
+    name: Tablet walkthrough
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Start demo server
+        working-directory: backend
+        run: |
+          pip install -r requirements-dev.txt
+          export ENGINE=mock MOCK_DELAY_S=5 API_KEY=ci-key STORE_NAME="Lakshmi Silks" DATA_DIR=/tmp/pallu-data
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
+          for i in $(seq 40); do curl -sf localhost:8000/api/health && break; sleep 1; done
+          python scripts/seed_demo.py --url http://localhost:8000 --key ci-key
+
+      - name: Build app and walkthrough APKs
+        working-directory: android
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon --console=plain 2>&1 | tee build.log
+      - name: Report build errors as annotations
+        if: failure()
+        working-directory: android
+        run: |
+          grep -E "^(e: |ERROR:|error:)" build.log | head -40 | while IFS= read -r l; do echo "::error title=build::$l"; done
+          grep -A25 "What went wrong" build.log | head -30 | sed 's/^/::error title=gradle::/' || true
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Walk through the app
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: Nexus 9
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-front emulated -camera-back emulated
+          working-directory: android
+          script: bash scripts/ui-check.sh
+
+      - name: Summarise
+        if: always()
+        run: |
+          mkdir -p ui-shots
+          cp /tmp/backend.log ui-shots/backend.log || true
+          ls ui-shots ui-shots/shots 2>/dev/null | head -80
+          grep -E "^(OK|FAILURES|Tests run)" ui-shots/instrument.txt | sed 's/^/::notice title=walkthrough::/' || true
+
+      - name: Publish screenshots to the ci-shots branch
+        if: always()
+        working-directory: ui-shots
+        run: |
+          git init -q -b ci-shots
+          git config user.name "pallu-ci"
+          git config user.email "pallu-ci@users.noreply.github.com"
+          git add -A
+          git commit -qm "UI walkthrough for ${GITHUB_SHA::7} (run ${GITHUB_RUN_ID})"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots

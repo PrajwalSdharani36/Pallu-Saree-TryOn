@@ -1,0 +1,322 @@
+package com.pallu.tryon
+
+import android.Manifest
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import android.os.ParcelFileDescriptor
+import android.os.SystemClock
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.BySelector
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.Until
+import com.pallu.tryon.data.AppMode
+import com.pallu.tryon.data.AppSettings
+import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.concurrent.thread
+
+/**
+ * Walks through the real app, end to end, against a running Pallu server (demo engine) and saves
+ * a screenshot of every screen. Run by CI on an emulator set to a Galaxy Tab S6 Lite's screen
+ * (1200 x 2000 px, 240 dpi) so the mirror's layout can be checked without the tablet in hand.
+ *
+ * Instrumentation args: server (default http://10.0.2.2:8000, the host machine) and key.
+ */
+@RunWith(AndroidJUnit4::class)
+class MirrorWalkthroughTest {
+    @get:Rule
+    val camera: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.CAMERA)
+
+    private val instr = InstrumentationRegistry.getInstrumentation()
+    private val device = UiDevice.getInstance(instr)
+    private val context get() = instr.targetContext
+    private val app get() = context.applicationContext as PalluApp
+    private val args = InstrumentationRegistry.getArguments()
+    private val server = (args.getString("server") ?: "http://10.0.2.2:8000").trimEnd('/')
+    private val key = args.getString("key") ?: "ci-key"
+    private val shots = File(context.getExternalFilesDir(null), "shots").apply { mkdirs() }
+    private var prefix = ""
+
+    // ------------------------------------------------------------------ tests
+
+    @Test
+    fun tabletPortrait() = walk("tab-portrait_") {
+        tablet(landscape = false)
+        mirrorVisit()
+        giftVisit()
+        setupScreen()
+    }
+
+    @Test
+    fun tabletLandscape() = walk("tab-landscape_") {
+        tablet(landscape = true)
+        mirrorVisit()
+        giftVisit()
+    }
+
+    @Test
+    fun phoneStaff() = walk("phone_") {
+        display(1080, 2400, 420)
+        device.setOrientationNatural()
+        staffVisit()
+        setupScreen()
+    }
+
+    // ------------------------------------------------------------------ flows
+
+    private fun mirrorVisit() {
+        configure(AppMode.KIOSK)
+        val s = newSession("Meera", "DEMO001", "DEMO002", "DEMO004", "DEMO006")
+        launch()
+        find(By.textContains("Hold up the QR code"), 20_000)
+        shot("01_welcome", settle = 3500)
+
+        // a mistyped code shows a friendly error
+        typeCode("ZZZZZZ")
+        tap("Start")
+        find(By.textContains("couldn't find that code"))
+        shot("02_wrong_code")
+
+        typeCode(s.code)
+        shot("03_code_typed", settle = 500)
+        tap("Start")
+
+        find(By.textContains("Namaste"))
+        shot("04_consent")
+        find(By.textContains("Stand in front of the mirror")).click()
+        find(By.textContains("I agree to a photo")).click()
+        shot("05_consent_ticked")
+        find(By.text("Take my photo")).click()
+
+        find(By.textContains("Take my photo in"), 20_000)
+        shot("06_camera", settle = 3000)
+        find(By.textContains("Take my photo in")).click()
+        SystemClock.sleep(1200)
+        shot("07_countdown", settle = 0)
+        find(By.textContains("Use this photo"), 25_000)
+        shot("08_review")
+        find(By.textContains("Use this photo")).click()
+
+        find(By.text("Your looks"), 20_000)
+        shot("09_draping", settle = 2500)
+        find(By.textContains("Shortlist"), 60_000)
+        shot("10_first_look")
+        find(By.textStartsWith("All 4 are ready"), 90_000)
+        tapShortlist()
+        shot("11_shortlisted")
+        swipePager()
+        shot("12_next_look")
+        holdToCompare("13_compare_original")
+        swipePager()
+        tapShortlist()
+
+        find(By.text("I'm done")).click()
+        find(By.text("Thank you"), 20_000)
+        shot("14_thank_you", settle = 2500)
+        find(By.textStartsWith("Start over")).click()
+        find(By.textContains("Hold up the QR code"), 20_000)
+    }
+
+    private fun giftVisit() {
+        configure(AppMode.KIOSK)
+        val s = newSession("Token 12", "DEMO003", "DEMO005")
+        launch()
+        find(By.textContains("Hold up the QR code"), 20_000)
+        typeCode(s.code)
+        tap("Start")
+        find(By.textContains("Send our staff a photo")).click()
+        find(By.text("Bengali")).click()
+        find(By.textContains("permission to use their photo")).click()
+        shot("20_gift_consent")
+        find(By.text("Continue")).click()
+        find(By.textContains("Send their photo to our staff"), 15_000)
+        shot("21_gift_waiting", settle = 3000)
+
+        uploadGiftPhoto(s.id) // what the staff phone does when the customer WhatsApps the photo
+        find(By.text("Your looks"), 30_000)
+        find(By.textContains("Shortlist"), 60_000)
+        shot("22_gift_look")
+        find(By.text("I'm done")).click()
+        find(By.text("Thank you"), 20_000)
+        shot("23_gift_thanks", settle = 1500)
+    }
+
+    private fun staffVisit() {
+        configure(AppMode.STAFF)
+        val s = newSession("Anita", "DEMO007", "DEMO008", "DEMO001")
+        launch()
+        find(By.textContains("Scan a new customer"), 20_000)
+        shot("30_staff_home", settle = 2500)
+        find(By.textContains("Scan a new customer")).click()
+        find(By.textContains("Scan saree tags"), 15_000)
+        shot("31_staff_scan", settle = 3000)
+        device.pressBack()
+        find(By.textContains("Anita"), 15_000).click()
+        find(By.textContains(s.code.take(3)), 15_000)
+        shot("32_staff_session", settle = 2500)
+        device.pressBack()
+    }
+
+    private fun setupScreen() {
+        runBlocking { app.container.settingsStore.save(AppSettings()) }
+        launch()
+        SystemClock.sleep(2500)
+        shot("90_setup")
+    }
+
+    // ------------------------------------------------------------------ app + server helpers
+
+    private data class NewSession(val id: String, val code: String)
+
+    private fun configure(mode: AppMode) = runBlocking {
+        app.container.settingsStore.save(
+            AppSettings(serverUrl = server, apiKey = key, mode = mode, storeName = "Lakshmi Silks", kioskIdleSeconds = 900),
+        )
+    }
+
+    private fun launch() {
+        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)!!
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        context.startActivity(intent)
+        device.wait(Until.hasObject(By.pkg(context.packageName).depth(0)), 15_000)
+    }
+
+    private fun newSession(label: String, vararg barcodes: String): NewSession {
+        val body = JSONObject().put("customer_label", label).put("barcodes", org.json.JSONArray(barcodes.toList()))
+        val r = http("POST", "/api/sessions", body.toString().toByteArray(), "application/json")
+        return NewSession(r.getString("id"), r.getString("code"))
+    }
+
+    private fun uploadGiftPhoto(sessionId: String) {
+        val b = "----pallu${System.nanoTime()}"
+        val out = ByteArrayOutputStream()
+        fun field(name: String, value: String) =
+            out.write("--$b\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
+        field("consent", "true")
+        field("mode", "gift")
+        field("drape_style", "")
+        out.write("--$b\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"p.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n".toByteArray())
+        out.write(standingFigureJpeg())
+        out.write("\r\n--$b--\r\n".toByteArray())
+        http("POST", "/api/sessions/$sessionId/photo", out.toByteArray(), "multipart/form-data; boundary=$b")
+    }
+
+    private fun http(method: String, path: String, body: ByteArray?, type: String?): JSONObject {
+        val c = URL(server + path).openConnection() as HttpURLConnection
+        c.requestMethod = method
+        c.connectTimeout = 10_000
+        c.readTimeout = 30_000
+        c.setRequestProperty("X-API-Key", key)
+        if (body != null) {
+            c.doOutput = true
+            c.setRequestProperty("Content-Type", type)
+            c.outputStream.use { it.write(body) }
+        }
+        val code = c.responseCode
+        val text = (if (code < 400) c.inputStream else c.errorStream)?.bufferedReader()?.readText().orEmpty()
+        check(code < 400) { "$method $path -> $code $text" }
+        return JSONObject(text)
+    }
+
+    /** A plain stand-in for a customer's photo: a figure standing against a wall. */
+    private fun standingFigureJpeg(): ByteArray {
+        val bmp = Bitmap.createBitmap(900, 1200, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(Color.rgb(226, 220, 210))
+        val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        p.color = Color.rgb(176, 128, 98)
+        c.drawOval(RectF(390f, 140f, 510f, 290f), p)
+        p.color = Color.rgb(70, 74, 92)
+        c.drawRoundRect(RectF(330f, 300f, 570f, 1100f), 60f, 60f, p)
+        return ByteArrayOutputStream().also { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }.toByteArray()
+    }
+
+    // ------------------------------------------------------------------ device helpers
+
+    private fun tablet(landscape: Boolean) {
+        display(1200, 2000, 240) // Galaxy Tab S6 Lite
+        if (landscape) device.setOrientationLeft() else device.setOrientationNatural()
+    }
+
+    private fun display(w: Int, h: Int, dpi: Int) {
+        shell("wm size ${w}x$h")
+        shell("wm density $dpi")
+        SystemClock.sleep(800)
+    }
+
+    private fun shell(cmd: String): String =
+        ParcelFileDescriptor.AutoCloseInputStream(instr.uiAutomation.executeShellCommand(cmd)).use {
+            it.readBytes().decodeToString()
+        }
+
+    private fun find(sel: BySelector, timeout: Long = 15_000): UiObject2 =
+        device.wait(Until.findObject(sel), timeout) ?: error("Not on screen after ${timeout / 1000}s: $sel")
+
+    private fun tap(text: String) {
+        val o = find(By.text(text))
+        device.wait(Until.hasObject(By.text(text).enabled(true)), 5_000)
+        o.click()
+    }
+
+    private fun typeCode(code: String) {
+        find(By.clazz("android.widget.EditText")).text = code
+        SystemClock.sleep(300)
+    }
+
+    private fun tapShortlist() {
+        device.findObject(By.text("Shortlist"))?.click()
+            ?: device.findObject(By.desc("Shortlist"))?.click()
+        SystemClock.sleep(900)
+    }
+
+    private fun swipePager() {
+        val w = device.displayWidth
+        val h = device.displayHeight
+        device.swipe((w * 0.8).toInt(), h / 2, (w * 0.2).toInt(), h / 2, 25)
+        SystemClock.sleep(1200)
+    }
+
+    private fun holdToCompare(name: String) {
+        val x = device.displayWidth / 2
+        val y = (device.displayHeight * 0.42).toInt()
+        val hold = thread { device.swipe(x, y, x, y, 400) } // ~2 s press in place
+        SystemClock.sleep(1000)
+        shot(name, settle = 0)
+        hold.join()
+    }
+
+    private fun shot(name: String, settle: Long = 1500) {
+        SystemClock.sleep(settle)
+        device.takeScreenshot(File(shots, "$prefix$name.png"))
+    }
+
+    /** Runs a flow; on failure saves a screenshot and the screen's UI tree so CI shows where it stopped. */
+    private fun walk(prefix: String, flow: () -> Unit) {
+        this.prefix = prefix
+        try {
+            flow()
+        } catch (t: Throwable) {
+            runCatching { device.takeScreenshot(File(shots, "${prefix}zz_FAILED.png")) }
+            runCatching { device.dumpWindowHierarchy(File(shots, "${prefix}zz_FAILED_tree.xml")) }
+            runCatching { File(shots, "${prefix}zz_FAILED.txt").writeText(t.stackTraceToString()) }
+            throw t
+        } finally {
+            runCatching { device.setOrientationNatural() }
+        }
+    }
+}
