@@ -98,8 +98,8 @@ class MirrorWalkthroughTest {
 
         find(By.textContains("Namaste"))
         shot("04_consent")
-        find(By.textContains("Stand in front of the mirror")).click()
-        find(By.textContains("I agree to a photo")).click()
+        clickRetry(By.textContains("Stand in front of the mirror"))
+        clickRetry(By.textContains("I agree to a photo"))
         shot("05_consent_ticked")
         find(By.text("Take my photo")).click()
 
@@ -251,8 +251,11 @@ class MirrorWalkthroughTest {
     /** Waits for something on screen; if it never appears, scrolls the page looking for it. */
     private fun find(sel: BySelector, timeout: Long = 15_000): UiObject2 {
         device.wait(Until.findObject(sel), timeout)?.let { return it }
-        device.findObject(By.scrollable(true))?.let { list ->
-            list.scrollUntil(Direction.DOWN, Until.findObject(sel))?.let { return it }
+        repeat(6) {
+            val list = device.findObject(By.scrollable(true)) ?: return@repeat
+            runCatching { list.scroll(Direction.DOWN, 0.7f) }
+            SystemClock.sleep(600)
+            device.findObject(sel)?.let { return it }
         }
         error("Not on screen after ${timeout / 1000}s: $sel")
     }
@@ -268,10 +271,19 @@ class MirrorWalkthroughTest {
         SystemClock.sleep(300)
     }
 
+    private fun clickRetry(sel: BySelector) {
+        repeat(3) { if (runCatching { find(sel).click() }.isSuccess) return else SystemClock.sleep(400) }
+        find(sel).click()
+    }
+
     private fun tapShortlist() {
-        device.findObject(By.text("Shortlist"))?.click()
-            ?: device.findObject(By.desc("Shortlist"))?.click()
-        SystemClock.sleep(900)
+        repeat(3) { // the pager recomposes while looks arrive, so a found button can go stale
+            val ok = runCatching {
+                (device.findObject(By.text("Shortlist")) ?: device.findObject(By.desc("Shortlist")))!!.click()
+            }.isSuccess
+            if (ok) return SystemClock.sleep(900)
+            SystemClock.sleep(500)
+        }
     }
 
     private fun swipePager() {
