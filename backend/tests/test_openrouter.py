@@ -98,3 +98,24 @@ def test_startup_check():
     assert run(engine(credits(5, 5)).check())["state"] == "error"
     bad = run(engine(lambda r: httpx.Response(401, json={"error": {"message": "No auth"}})).check())
     assert bad["state"] == "error" and "rejected the key" in bad["message"]
+
+
+def test_analysis_repairs_or_retries_bad_json():
+    calls = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        calls.append(body)
+        assert body["response_format"] == {"type": "json_object"}
+        if len(calls) == 1:  # broken: missing comma between keys
+            return httpx.Response(200, json={"choices": [{"message": {"content": '{"body": {"color": "pink"} "pallu": {}}'}}]})
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"body": {"color": "pink"}, "pallu": {}}'}}]})
+
+    assert run(engine(handler).analyze_saree(b"S")) == {"body": {"color": "pink"}, "pallu": {}}
+    assert len(calls) == 2 and "not valid JSON" in calls[1]["messages"][-1]["content"]
+
+    # trailing commas are fixed without another call
+    calls.clear()
+    trailing = lambda r: (calls.append(1), httpx.Response(200, json={"choices": [{"message": {"content": '{"a": [1, 2,], "b": 3,}'}}]}))[1]
+    assert run(engine(trailing).analyze_saree(b"S")) == {"a": [1, 2], "b": 3}
+    assert len(calls) == 1

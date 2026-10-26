@@ -10,6 +10,7 @@ import asyncio
 import base64
 import json
 import logging
+import re
 
 import httpx
 
@@ -56,6 +57,26 @@ def output_image(data: dict) -> bytes:
         if isinstance(url, str) and url.startswith("data:") and "," in url:
             return base64.b64decode(url.split(",", 1)[1])
     raise EngineError(f"The model returned no image: {json.dumps(data)[:300]}", retryable=False)
+
+
+def _message_text(data: dict) -> str:
+    try:
+        text = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        return ""
+    if isinstance(text, list):  # content parts
+        text = "".join(p.get("text", "") for p in text if isinstance(p, dict))
+    return text or ""
+
+
+def parse_json_lenient(text: str) -> dict:
+    """parse_json_text, but forgiving the usual slips: trailing commas, smart quotes, stray text."""
+    try:
+        return parse_json_text(text)
+    except (ValueError, json.JSONDecodeError):
+        fixed = text.replace("\u201c", '"').replace("\u201d", '"')
+        fixed = re.sub(r",\s*([}\]])", r"\1", fixed)
+        return parse_json_text(fixed)
 
 
 class OpenRouterEngine:
@@ -139,6 +160,8 @@ class OpenRouterEngine:
             body = {
                 "model": model,
                 "temperature": 0.2,
+                "max_tokens": 1500,
+                "response_format": {"type": "json_object"},
                 "messages": [{
                     "role": "user",
                     "content": [
@@ -158,12 +181,20 @@ class OpenRouterEngine:
             if self._text_model is None:
                 self._text_model = model
                 log.info("Saree reading: using %s", model)
+            text = _message_text(data)
             try:
-                text = data["choices"][0]["message"]["content"]
-                if isinstance(text, list):  # content parts
-                    text = "".join(p.get("text", "") for p in text if isinstance(p, dict))
-                return parse_json_text(text or "")
-            except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as e:
+                return parse_json_lenient(text)
+            except (ValueError, json.JSONDecodeError):
+                pass
+            # One more go: show the model its answer and ask for valid JSON only.
+            body["messages"] += [
+                {"role": "assistant", "content": text[:4000]},
+                {"role": "user", "content": "That was not valid JSON. Reply with only the corrected JSON object, nothing else."},
+            ]
+            text = _message_text(await self._post("/chat/completions", body))
+            try:
+                return parse_json_lenient(text)
+            except (ValueError, json.JSONDecodeError) as e:
                 raise EngineError(f"Could not parse saree analysis: {e}") from e
         raise first_error or EngineError("No OpenRouter text model was available")
 
