@@ -61,6 +61,11 @@ python scripts/seed_demo.py --url http://localhost:8000 --key YOUR_API_KEY
 
 If Google renames the model or endpoint, the server tries the other API style and then `gemini-3.1-flash-image` by itself, and logs which one worked. The server window and the staff app explain the common errors in plain words, such as a wrong key or billing not switched on.
 
+**Google billing won't go through? Use OpenRouter instead.** OpenRouter resells the same Google image model (Nano Banana 2.1) on a prepaid balance you top up once with a card.
+1. Sign up at [openrouter.ai](https://openrouter.ai), go to **Credits**, and add $5–10.
+2. Under **Keys**, create a key.
+3. In `backend/.env` set `ENGINE=openrouter` and `OPENROUTER_API_KEY=...`, then restart the server. The admin page shows whether the key was accepted and how much credit is left.
+
 Model settings live in `.env`:
 
 | Setting | Default | Notes |

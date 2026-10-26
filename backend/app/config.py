@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     database_url: str = ""  # defaults to sqlite in data_dir
 
     # --- Try-on engine ---
-    engine: Literal["gemini", "mock"] = "mock"
+    engine: Literal["gemini", "openrouter", "mock"] = "mock"
     gemini_api_key: str = ""
     gemini_base_url: str = "https://generativelanguage.googleapis.com"
     # "interactions" = current Gemini Interactions API, "generate_content" = classic models/*:generateContent
@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     gemini_text_model: str = "gemini-flash-latest"
     # Ask Google not to keep the request (customer photos) for later retrieval.
     gemini_store: bool = False
+    # OpenRouter: the same Nano Banana models, prepaid with a card (when Google billing won't work)
+    openrouter_api_key: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_image_model: str = "google/gemini-nano-banana-2.1"
+    openrouter_text_model: str = "google/gemini-2.5-flash"
     image_size: str = "1K"  # 1K | 2K | 4K
     aspect_ratio: str = "3:4"  # portrait, full length
     request_timeout_s: float = 180.0

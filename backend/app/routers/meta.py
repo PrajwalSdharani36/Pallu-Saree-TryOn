@@ -18,7 +18,7 @@ def health(request: Request):
     s = get_settings()
     engine = request.app.state.worker.engine
     engine_status = getattr(engine, "status", None) or {
-        "state": "demo", "message": "Demo mode: looks are placeholders. Set ENGINE=gemini for real try-ons.",
+        "state": "demo", "message": "Demo mode: looks are placeholders. Set ENGINE=openrouter or ENGINE=gemini for real try-ons.",
     }
     return {"status": "ok", "store_name": s.store_name, "engine": engine.name, "engine_status": engine_status}
 
