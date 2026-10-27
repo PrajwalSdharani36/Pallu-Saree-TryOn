@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -82,7 +83,7 @@ fun AttractScreen(
     // put away, typing mode ends. The camera window stays put while typing: removing a camera view
     // takes focus away from the code box and closes the keyboard again.
     var codeFocused by remember { mutableStateOf(false) }
-    val keyboardUp = WindowInsets.isImeVisible
+    val keyboardUp = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val focusManager = LocalFocusManager.current
     LaunchedEffect(codeFocused, keyboardUp) {
         if (codeFocused && !keyboardUp) {
@@ -127,8 +128,12 @@ fun AttractScreen(
                     if (wide) {
                         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(48.dp)) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                                Headline(k * 0.72f) // landscape is short: leave room for the saree fan
-                                SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
+                                if (!typing) {
+                                    Headline(k * 0.72f) // landscape is short: leave room for the saree fan
+                                    SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
+                                } else {
+                                    Headline(k * 0.6f)
+                                }
                             }
                             StartCard(
                                 vm = vm, hasCamera = hasCamera, code = code, onCode = { code = it },

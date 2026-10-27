@@ -3,7 +3,8 @@ package com.pallu.tryon.ui.kiosk
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -229,15 +230,16 @@ fun CodeBoxes(
     // When the keyboard opens, scroll the boxes into view so customers can see what they type.
     val bring = remember { BringIntoViewRequester() }
     var focused by remember { mutableStateOf(false) }
-    val keyboardUp = WindowInsets.isImeVisible
-    LaunchedEffect(focused, keyboardUp) {
-        if (focused && keyboardUp) {
-            delay(250) // let the keyboard finish sliding in
+    // The keyboard's height, straight from the window insets (its "visible" flag is unreliable in kiosk mode).
+    val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(focused, keyboardHeight) {
+        if (focused) {
+            delay(300) // let the keyboard finish sliding in
             bring.bringIntoView()
         }
     }
     BasicTextField(
-        modifier = Modifier.bringIntoViewRequester(bring).onFocusChanged { focused = it.isFocused; onFocusChange(it.isFocused) },
+        modifier = Modifier.bringIntoViewRequester(bring).onFocusChanged { focused = it.hasFocus; onFocusChange(it.hasFocus) },
         value = value,
         onValueChange = { raw -> onValueChange(raw.filter { it.isLetterOrDigit() }.uppercase().take(6)) },
         singleLine = true,
