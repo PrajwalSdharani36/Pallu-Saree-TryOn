@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -68,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pallu.tryon.data.SessionItem
+import com.pallu.tryon.data.drapeLabel
 import com.pallu.tryon.ui.common.ErrorNote
 import com.pallu.tryon.ui.common.RemoteImage
 import com.pallu.tryon.ui.common.rupees
@@ -98,6 +100,16 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
     var showOriginal by remember { mutableStateOf(false) }
     val strip = rememberLazyListState()
     LaunchedEffect(pager.currentPage) { if (items.isNotEmpty()) strip.animateScrollToItem(pager.currentPage.coerceAtMost(items.lastIndex)) }
+    var sheet by remember { mutableStateOf<ResultsSheet?>(null) }
+    // a look that was just added (new drape, more sarees): swipe to it once it's in the list
+    var goTo by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(goTo, items.size) {
+        val idx = items.indexOfFirst { it.id == goTo }
+        if (idx >= 0) {
+            pager.animateScrollToPage(idx)
+            goTo = null
+        }
+    }
 
     KioskPage {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -151,6 +163,7 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                         onRetry = { vm.retry(item) },
                         onFavorite = { vm.toggleFavorite(item) },
                         onHold = { showOriginal = it },
+                        onChangeDrape = { sheet = ResultsSheet.Drape(item.id) },
                         modifier = Modifier.graphicsLayer {
                             val s = lerp(1f, 0.86f, offset)
                             scaleX = s
@@ -204,17 +217,63 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OutlineButton("Retake photo", { vm.setPhoto(null); onRetake() })
+                    Spacer(Modifier.width(14.dp))
+                    OutlineButton("Try more sarees", { vm.loadCatalog(); sheet = ResultsSheet.More }, gold = true)
                     Spacer(Modifier.weight(1f))
                     GoldButton(
                         text = if (state.finishing) "Deleting your photos…" else "I'm done",
-                        onClick = { vm.finish(onFinished) },
+                        onClick = { sheet = ResultsSheet.Done },
                         enabled = !state.finishing,
-                        modifier = Modifier.widthIn(min = 220.dp),
+                        modifier = Modifier.widthIn(min = 200.dp),
                     )
                 }
             }
+
+            when (val sh = sheet) {
+                is ResultsSheet.Drape -> {
+                    val item = items.firstOrNull { it.id == sh.itemId }
+                    if (item == null) {
+                        LaunchedEffect(Unit) { sheet = null }
+                    } else {
+                        DrapeSheet(
+                            item = item,
+                            sameSaree = items.filter { it.saree.id == item.saree.id },
+                            busy = state.busy,
+                            onPick = { drape -> vm.redrape(item, drape) { id -> goTo = id; sheet = null } },
+                            onShow = { id -> goTo = id; sheet = null },
+                            onClose = { sheet = null },
+                        )
+                    }
+                }
+                ResultsSheet.More -> TryMoreSheet(
+                    catalog = state.catalog,
+                    loading = state.catalogLoading,
+                    alreadyTrying = items.map { it.saree.id }.toSet(),
+                    canAdd = MAX_SAREES - items.map { it.saree.id }.distinct().size,
+                    busy = state.busy,
+                    onAdd = { ids -> vm.addSarees(ids) { id -> goTo = id; sheet = null } },
+                    onClose = { sheet = null },
+                )
+                ResultsSheet.Done -> DoneSheet(
+                    shortlisted = items.filter { it.favorite }.map { it.saree.id }.distinct().size,
+                    finishing = state.finishing,
+                    onTryMore = { vm.loadCatalog(); sheet = ResultsSheet.More },
+                    onDone = { vm.finish(onFinished) },
+                    onClose = { sheet = null },
+                )
+                null -> Unit
+            }
         }
     }
+}
+
+/** Matches the server's MAX_SAREES_PER_SESSION default; the server has the final say. */
+private const val MAX_SAREES = 12
+
+private sealed interface ResultsSheet {
+    data class Drape(val itemId: String) : ResultsSheet
+    data object More : ResultsSheet
+    data object Done : ResultsSheet
 }
 
 @Composable
@@ -234,6 +293,7 @@ private fun LookCard(
     onRetry: () -> Unit,
     onFavorite: () -> Unit,
     onHold: (Boolean) -> Unit,
+    onChangeDrape: () -> Unit,
     modifier: Modifier,
 ) {
     Box(
@@ -262,6 +322,7 @@ private fun LookCard(
         }
         if (item.isDone && original == null) {
             InfoPanel(item, onFavorite, Modifier.align(Alignment.BottomCenter).padding(16.dp))
+            if (isCurrent) DrapeChip(item.drapeStyle, onChangeDrape, Modifier.align(Alignment.TopStart).padding(16.dp))
         }
         if (original != null) {
             Text(
@@ -272,6 +333,26 @@ private fun LookCard(
                     .clip(RoundedCornerShape(50)).background(Mirror.copy(alpha = 0.75f)).padding(horizontal = 16.dp, vertical = 6.dp),
             )
         }
+    }
+}
+
+/** Top corner of a finished look: which drape it is, and a way to see the saree in another. */
+@Composable
+private fun DrapeChip(drape: String, onClick: () -> Unit, modifier: Modifier) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(50))
+            .background(Mirror.copy(alpha = 0.84f))
+            .border(1.dp, ZariLight.copy(alpha = 0.5f), RoundedCornerShape(50))
+            .clickable(onClickLabel = "Change drape", onClick = onClick)
+            .padding(start = 18.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("${drapeLabel(drape)} drape", style = MaterialTheme.typography.titleMedium, color = OnMirror)
+        Spacer(Modifier.width(12.dp))
+        Icon(Icons.Filled.SwapHoriz, contentDescription = null, tint = ZariLight, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(6.dp))
+        Text("Change", style = MaterialTheme.typography.titleMedium, color = ZariLight)
     }
 }
 
@@ -382,6 +463,7 @@ private fun Draping(item: SessionItem) {
                     item.saree.name, fontFamily = Rozha, fontSize = 34.sp, lineHeight = 38.sp,
                     color = OnMirror, textAlign = TextAlign.Center,
                 )
+                Text("${drapeLabel(item.drapeStyle)} drape", style = MaterialTheme.typography.titleMedium, color = OnMirrorMuted)
             }
             if (item.status == "running") {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.widthIn(max = 420.dp)) {

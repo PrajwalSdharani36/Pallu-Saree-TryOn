@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     session_ttl_minutes: int = 120  # how long a QR session stays usable
     photo_ttl_minutes: int = 30  # customer photo + generated images auto-deleted after this
     max_sarees_per_session: int = 12
+    max_looks_per_session: int = 24  # sarees plus re-drapes of them
     max_upload_mb: int = 12
     purge_interval_s: int = 60
 

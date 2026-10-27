@@ -61,6 +61,13 @@ interface PalluApi {
     @POST("api/sessions/{ref}/items/{itemId}/retry")
     suspend fun retry(@Path("ref") ref: String, @Path("itemId") itemId: String): TryOnSession
 
+    @POST("api/sessions/{ref}/items/{itemId}/redrape")
+    suspend fun redrape(
+        @Path("ref") ref: String,
+        @Path("itemId") itemId: String,
+        @Body body: RedrapeBody,
+    ): TryOnSession
+
     @POST("api/sessions/{ref}/items/{itemId}/favorite")
     suspend fun favorite(
         @Path("ref") ref: String,

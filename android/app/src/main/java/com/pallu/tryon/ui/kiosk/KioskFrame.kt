@@ -31,6 +31,9 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.pallu.tryon.ui.theme.Mirror
@@ -41,8 +44,8 @@ import com.pallu.tryon.ui.theme.ZariLight
 import kotlinx.coroutines.delay
 
 /**
- * Wraps every kiosk screen: the mirror theme (dark by default, light on request), screen kept on, system bars hidden,
- * and an idle timer. If a customer walks away mid-session, their photo is deleted and
+ * Wraps every kiosk screen: the mirror theme (dark by default, light on request), screen kept on,
+ * and an idle timer (the status and navigation bars are hidden by [SystemBars]). If a customer walks away mid-session, their photo is deleted and
  * the mirror returns to the start screen.
  */
 @Composable
@@ -61,14 +64,7 @@ fun KioskFrame(
 
     DisposableEffect(view) {
         view.keepScreenOn = true
-        val window = (view.context as? Activity)?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        controller?.hide(WindowInsetsCompat.Type.systemBars())
-        onDispose {
-            view.keepScreenOn = false
-            controller?.show(WindowInsetsCompat.Type.systemBars())
-        }
+        onDispose { view.keepScreenOn = false }
     }
 
     LaunchedEffect(idleSeconds) {
@@ -106,6 +102,36 @@ fun KioskFrame(
                 }
             }
         }
+    }
+}
+
+/**
+ * One place that decides the system bars for the whole app. On the mirror they're hidden (a swipe
+ * shows them briefly, with icons that suit the theme); on the staff phone they're shown with light
+ * icons over the dark header. Re-applied whenever the app comes back to the front, because Android
+ * shows the bars again after another app or the lock screen.
+ */
+@Composable
+fun SystemBars(kiosk: Boolean, light: Boolean) {
+    val view = LocalView.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(kiosk, light, lifecycle) {
+        val window = (view.context as? Activity)?.window ?: return@DisposableEffect onDispose {}
+        val c = WindowCompat.getInsetsController(window, view)
+        fun apply() {
+            if (kiosk) {
+                c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                c.hide(WindowInsetsCompat.Type.systemBars())
+            } else {
+                c.show(WindowInsetsCompat.Type.systemBars())
+            }
+            c.isAppearanceLightStatusBars = kiosk && light
+            c.isAppearanceLightNavigationBars = kiosk && light
+        }
+        apply()
+        val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) apply() }
+        lifecycle.addObserver(obs)
+        onDispose { lifecycle.removeObserver(obs) }
     }
 }
 

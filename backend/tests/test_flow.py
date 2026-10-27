@@ -179,3 +179,55 @@ def test_switching_to_real_engine_rereads_demo_analysis(client):
     with Session(get_engine()) as db:
         row = db.get(Saree, s["id"])
         assert row.analysis_status == AnalysisStatus.done and '"real"' in row.analysis_json
+
+
+def test_redrape_one_look(client):
+    add_saree(client, "A", "A1")
+    add_saree(client, "B", "B2")
+    sess = client.post("/api/sessions", json={"barcodes": ["A1", "B2"]}).json()
+    first = sess["items"][0]
+    # no photo yet -> nothing to re-drape
+    assert client.post(f"/api/sessions/{sess['id']}/items/{first['id']}/redrape", json={"drape_style": "bengali"}).status_code == 409
+    client.post(f"/api/sessions/{sess['id']}/photo", data={"consent": "true", "drape_style": "nivi"},
+                files={"photo": ("p.jpg", make_jpeg(), "image/jpeg")})
+    wait_for(client, sess["id"], lambda s: s["status"] == "ready")
+
+    assert client.post(f"/api/sessions/{sess['id']}/items/{first['id']}/redrape", json={"drape_style": "saree-wrap"}).status_code == 422
+    s = client.post(f"/api/sessions/{sess['id']}/items/{first['id']}/redrape", json={"drape_style": "bengali"}).json()
+    # the new look sits right after the one it came from, in its own drape
+    assert [(i["saree"]["name"], i["drape_style"]) for i in s["items"]] == [("A", "nivi"), ("A", "bengali"), ("B", "nivi")]
+    assert [i["position"] for i in s["items"]] == [0, 1, 2]
+    # asking again for the same drape doesn't make a duplicate
+    again = client.post(f"/api/sessions/{sess['id']}/items/{first['id']}/redrape", json={"drape_style": "bengali"}).json()
+    assert again["total"] == 3
+    done = wait_for(client, sess["id"], lambda s: s["status"] == "ready")
+    assert done["done"] == 3
+    # a re-drape doesn't use up a saree slot, and adding the same saree again is a no-op
+    assert client.post(f"/api/sessions/{sess['id']}/items", json={"barcode": "A1"}).json()["total"] == 3
+
+
+def test_old_database_gets_new_columns(tmp_path, monkeypatch):
+    import sqlite3
+
+    from app import config, db
+
+    path = tmp_path / "pallu.db"
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE sessionitem (id VARCHAR PRIMARY KEY, session_id VARCHAR, saree_id VARCHAR, position INTEGER)")
+    con.execute("INSERT INTO sessionitem VALUES ('x', 's', 'k', 0)")
+    con.commit()
+    con.close()
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    config.get_settings.cache_clear()
+    db.reset_engine()
+    try:
+        db.init_db()
+        db.init_db()  # running twice is harmless
+        con = sqlite3.connect(path)
+        cols = [r[1] for r in con.execute("PRAGMA table_info(sessionitem)")]
+        assert "drape_style" in cols
+        assert con.execute("SELECT drape_style FROM sessionitem WHERE id='x'").fetchone() == (None,)
+        con.close()
+    finally:
+        db.reset_engine()
+        config.get_settings.cache_clear()

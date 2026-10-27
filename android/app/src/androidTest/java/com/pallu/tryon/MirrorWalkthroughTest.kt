@@ -141,10 +141,30 @@ class MirrorWalkthroughTest {
         swipePager()
         shot("12_next_look")
         holdToCompare("13_compare_original")
-        swipePager()
+
+        // same saree, another drape: a new look appears right next to it
+        find(By.text("Change")).click()
+        find(By.text("Try another drape"))
+        shot("13b_drape_sheet", settle = 800)
+        find(By.text("Bengali")).click()
+        find(By.text("Bengali drape"), 20_000)
+        shot("13c_new_drape", settle = 1500)
+
+        // one more saree from the collection, with the same photo
+        find(By.text("Try more sarees")).click()
+        find(By.textContains("Pick from our collection"), 15_000)
+        find(By.text("Ivory Kasavu, Kerala"), 15_000).click()
+        shot("13d_try_more", settle = 1500)
+        find(By.text("Try this saree")).click()
+        find(By.textStartsWith("All 6 are ready"), 120_000)
+        shot("13e_six_looks", settle = 1500)
         tapShortlist()
 
+        // finishing asks first, because it deletes the photo
         find(By.text("I'm done")).click()
+        find(By.text("All done?"))
+        shot("13f_done_check", settle = 800)
+        find(By.text("Yes, I'm done")).click()
         find(By.text("Thank you"), 20_000)
         shot("14_thank_you", settle = 2500)
         find(By.textStartsWith("Start over")).click()
@@ -171,6 +191,7 @@ class MirrorWalkthroughTest {
         findLook(60_000)
         shot("22_gift_look")
         find(By.text("I'm done")).click()
+        find(By.text("Yes, I'm done")).click()
         find(By.text("Thank you"), 20_000)
         shot("23_gift_thanks", settle = 1500)
     }
@@ -184,7 +205,12 @@ class MirrorWalkthroughTest {
         find(By.textContains("Scan a new customer")).click()
         find(By.textContains("Scan saree tags"), 15_000)
         shot("31_staff_scan", settle = 3000)
-        device.pressBack()
+        // typing the customer's name folds the camera away so the field stays in view
+        find(By.textContains("Customer name")).click()
+        SystemClock.sleep(800)
+        device.findObject(By.focused(true))?.text = "Saifu"
+        shot("31b_staff_typing_name", settle = 1500)
+        find(By.desc("Back")).click()
         find(By.textContains("Anita"), 15_000).click()
         find(By.textContains(s.code.take(3)), 15_000)
         shot("32_staff_session", settle = 2500)

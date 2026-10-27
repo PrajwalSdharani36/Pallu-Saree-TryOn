@@ -82,6 +82,8 @@ class SessionItem(SQLModel, table=True):
     session_id: str = Field(index=True, foreign_key="tryonsession.id")
     saree_id: str = Field(index=True, foreign_key="saree.id")
     position: int = 0
+    # None = the session's drape; set when the customer re-drapes one look in another style
+    drape_style: Optional[str] = None
     status: ItemStatus = ItemStatus.pending
     favorite: bool = False
     result_file: Optional[str] = None

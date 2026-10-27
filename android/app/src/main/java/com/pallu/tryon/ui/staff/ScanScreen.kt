@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,7 +51,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -87,7 +96,13 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
     var toast by remember { mutableStateOf<Toast?>(null) }
     var lastToast by remember { mutableStateOf<Toast?>(null) }
     var newest by remember { mutableStateOf<String?>(null) }
+    val focus = LocalFocusManager.current
     val adding = state.addingTo != null
+    // While a name or barcode is being typed, fold the camera away so the field stays above the keyboard.
+    var nameFocused by remember { mutableStateOf(false) }
+    var codeFocused by remember { mutableStateOf(false) }
+    val imeOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val typing = imeOpen && (nameFocused || codeFocused)
 
     LaunchedEffect(Unit) {
         vm.events.collect { e ->
@@ -117,8 +132,12 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
             onBack = onBack,
         )
 
-        // ---- viewfinder
-        Box(Modifier.fillMaxWidth().aspectRatio(16f / 10f).background(Color(0xFF1A1216))) {
+        // ---- viewfinder (clipped: the camera picture must never spill over the form below)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val full = maxWidth * 10f / 16f
+        // 1dp rather than 0 so the camera stays attached and comes straight back
+        val h by animateDpAsState(if (typing) 1.dp else full, tween(250), label = "viewfinder")
+        Box(Modifier.fillMaxWidth().height(h).clipToBounds().background(Color(0xFF1A1216))) {
             if (hasCamera) {
                 BarcodeScannerView(Modifier.fillMaxSize(), ScanKind.PRODUCT_BARCODES, torch = torch, onCode = vm::onCode)
                 ScanFrame(Modifier.fillMaxSize())
@@ -149,34 +168,37 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
                 if (t != null) ToastChip(t.text, if (t.ok) Icons.Filled.Check else Icons.Filled.Info, if (t.ok) Peacock else Color(0xFF9A5B00))
             }
         }
+        }
 
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (!adding) {
-                        OutlinedTextField(
-                            value = state.customerLabel, onValueChange = vm::setLabel,
-                            label = { Text("Customer name or token") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+            if (!adding) {
+                item {
                     OutlinedTextField(
-                        value = typed, onValueChange = { typed = it },
-                        label = { Text("Barcode") },
+                        value = state.customerLabel, onValueChange = vm::setLabel,
+                        label = { Text("Customer name or token (optional)") },
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { vm.onCode(typed); typed = "" }),
-                        trailingIcon = {
-                            TextButton(onClick = { vm.onCode(typed); typed = "" }, enabled = typed.isNotBlank()) { Text("Add") }
-                        },
-                        modifier = Modifier.weight(if (adding) 1f else 0.8f),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
+                        modifier = Modifier.fillMaxWidth().onFocusChanged { nameFocused = it.isFocused },
                     )
                 }
+            }
+            item {
+                OutlinedTextField(
+                    value = typed, onValueChange = { typed = it },
+                    label = { Text("Type a barcode instead") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { vm.onCode(typed); typed = "" }),
+                    trailingIcon = {
+                        TextButton(onClick = { vm.onCode(typed); typed = "" }, enabled = typed.isNotBlank()) { Text("Add") }
+                    },
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { codeFocused = it.isFocused },
+                )
             }
             item { ErrorNote(state.error) }
             item {

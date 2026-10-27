@@ -18,6 +18,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pallu.tryon.data.AppContainer
@@ -30,6 +31,7 @@ import com.pallu.tryon.ui.kiosk.ConsentScreen
 import com.pallu.tryon.ui.kiosk.KioskFrame
 import com.pallu.tryon.ui.kiosk.KioskViewModel
 import com.pallu.tryon.ui.kiosk.ResultsScreen
+import com.pallu.tryon.ui.kiosk.SystemBars
 import com.pallu.tryon.ui.kiosk.ThankYouScreen
 import com.pallu.tryon.ui.kiosk.TryOnMode
 import com.pallu.tryon.ui.kiosk.WaitGiftScreen
@@ -102,6 +104,10 @@ private fun Graph(
         mirrorPalette = if (light) LightMirror else DarkMirror // repaint at once; the save follows
         scope.launch { container.settingsStore.setKioskLight(light) }
     }
+
+    val entry by nav.currentBackStackEntryAsState()
+    val route = entry?.destination?.route ?: start
+    SystemBars(kiosk = route.startsWith(Routes.KIOSK), light = settings.kioskLight)
 
     NavHost(navController = nav, startDestination = start) {
         composable(Routes.SETUP) {

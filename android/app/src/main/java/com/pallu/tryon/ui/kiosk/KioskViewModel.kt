@@ -5,7 +5,9 @@ import android.graphics.BitmapFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pallu.tryon.data.AppContainer
+import com.pallu.tryon.data.AddItemBody
 import com.pallu.tryon.data.FavoriteBody
+import com.pallu.tryon.data.RedrapeBody
 import com.pallu.tryon.data.Saree
 import com.pallu.tryon.data.SessionUpdateBody
 import com.pallu.tryon.data.SessionItem
@@ -36,6 +38,11 @@ data class KioskState(
     val shortlist: List<Saree> = emptyList(),
     /** A few catalogue sarees for the welcome screen. */
     val showcase: List<Saree> = emptyList(),
+    /** The store's whole collection, for "Try more sarees". Loaded when that sheet opens. */
+    val catalog: List<Saree> = emptyList(),
+    val catalogLoading: Boolean = false,
+    /** Adding sarees or making a new drape: the sheet shows it's working. */
+    val busy: Boolean = false,
 ) {
     val anyWorking get() = session?.items?.any { it.isWorking } == true
 }
@@ -207,12 +214,66 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** For "Try more sarees": every saree in the store, newest first. */
+    fun loadCatalog() {
+        if (_state.value.catalogLoading) return
+        _state.update { it.copy(catalogLoading = true) }
+        viewModelScope.launch {
+            val repo = container.repository()
+            runCatching { repo.api.sarees(limit = 200) }
+                .onSuccess { list -> _state.update { it.copy(catalog = list.filter { s -> s.active }, catalogLoading = false) } }
+                .onFailure { e -> _state.update { it.copy(catalogLoading = false, error = repo.describe(e)) } }
+        }
+    }
+
+    /** Add sarees to this customer's try-on; they're draped with the photo she already took. */
+    fun addSarees(ids: List<String>, onAdded: (firstNewItemId: String?) -> Unit) {
+        val session = _state.value.session ?: return
+        if (ids.isEmpty() || _state.value.busy) return
+        touch()
+        _state.update { it.copy(busy = true, error = null) }
+        viewModelScope.launch {
+            val repo = container.repository()
+            var latest: TryOnSession? = null
+            var error: String? = null
+            for (id in ids) {
+                runCatching { repo.api.addItem(session.id, AddItemBody(sareeId = id)) }
+                    .onSuccess { latest = it }
+                    .onFailure { e -> error = repo.describe(e) }
+                if (error != null) break
+            }
+            val before = session.items.map { it.id }.toSet()
+            _state.update { st -> st.copy(session = latest ?: st.session, busy = false, error = error) }
+            startPolling()
+            onAdded(latest?.items?.firstOrNull { it.id !in before }?.id)
+        }
+    }
+
+    /** Make a new look of [item]'s saree in another drape, next to the original. */
+    fun redrape(item: SessionItem, drape: String, onMade: (newItemId: String?) -> Unit) {
+        val session = _state.value.session ?: return
+        if (_state.value.busy) return
+        touch()
+        _state.update { it.copy(busy = true, error = null) }
+        viewModelScope.launch {
+            val repo = container.repository()
+            runCatching { repo.api.redrape(session.id, item.id, RedrapeBody(drape)) }
+                .onSuccess { s ->
+                    _state.update { it.copy(session = s, busy = false) }
+                    startPolling()
+                    onMade(s.items.firstOrNull { it.saree.id == item.saree.id && it.drapeStyle == drape }?.id)
+                }
+                .onFailure { e -> _state.update { it.copy(busy = false, error = repo.describe(e)) }; onMade(null) }
+        }
+    }
+
     /** "I'm done": server deletes the photo and every generated image; shortlist is kept for staff. */
     fun finish(onDone: () -> Unit) {
         val session = _state.value.session ?: return onDone()
         _state.update { it.copy(finishing = true) }
         pollJob?.cancel()
-        val shortlist = session.items.filter { it.favorite }.map { it.saree }
+        // one entry per saree, even if she hearted it in two drapes
+        val shortlist = session.items.filter { it.favorite }.map { it.saree }.distinctBy { it.id }
         viewModelScope.launch {
             val repo = container.repository()
             runCatching { repo.api.finish(session.id) }

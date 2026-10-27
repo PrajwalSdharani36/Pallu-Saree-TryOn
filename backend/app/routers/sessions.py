@@ -12,7 +12,7 @@ from ..config import get_settings
 from ..db import get_db
 from ..models import ItemStatus, new_session_code, Saree, SessionItem, SessionStatus, TryOnSession, utcnow
 from ..prompts import DRAPE_STYLES
-from ..schemas import QR_PREFIX, AddItem, FavoriteIn, SessionCreate, SessionOut, SessionUpdate
+from ..schemas import QR_PREFIX, AddItem, FavoriteIn, RedrapeIn, SessionCreate, SessionOut, SessionUpdate
 from ..security import require_key
 from ..worker import refresh_session_status, wipe_session_media
 from .sarees import read_upload
@@ -152,8 +152,8 @@ def add_item(ref: str, body: AddItem, request: Request, db: Session = Depends(ge
     existing = rows_for(db, sess)
     if any(s.id == sarees[0].id for _, s in existing):
         return out(db, sess)
-    if len(existing) >= get_settings().max_sarees_per_session:
-        raise HTTPException(422, "Session is full")
+    if len({s.id for _, s in existing}) >= get_settings().max_sarees_per_session:
+        raise HTTPException(422, f"At most {get_settings().max_sarees_per_session} sarees per customer")
     item = SessionItem(session_id=sess.id, saree_id=sarees[0].id, position=len(existing))
     if sess.photo_file:
         item.status = ItemStatus.queued
@@ -246,6 +246,39 @@ def retry_item(ref: str, item_id: str, request: Request, db: Session = Depends(g
     item.status = ItemStatus.queued
     item.error = ""
     db.add(item)
+    refresh_session_status(db, sess)
+    db.commit()
+    request.app.state.worker.enqueue(item.id)
+    return out(db, sess)
+
+
+@router.post("/api/sessions/{ref}/items/{item_id}/redrape", response_model=SessionOut)
+def redrape_item(ref: str, item_id: str, body: RedrapeIn, request: Request, db: Session = Depends(get_db)):
+    """The customer likes a saree but wants to see it in another drape: make a new look of the same
+    saree in that style, placed right after the original so the two can be compared."""
+    sess = find_session(db, ref)
+    require_open(sess)
+    if not sess.photo_file:
+        raise HTTPException(409, "No customer photo; take a photo first")
+    style = check_drape(body.drape_style)
+    source = db.get(SessionItem, item_id)
+    if not source or source.session_id != sess.id:
+        raise HTTPException(404, "Item not found")
+    items = [i for i, _ in rows_for(db, sess)]
+    if any(i.saree_id == source.saree_id and (i.drape_style or sess.drape_style) == style for i in items):
+        return out(db, sess)  # already have this saree in this drape
+    if len(items) >= get_settings().max_looks_per_session:
+        raise HTTPException(422, "That's the most looks one customer can have. Remove one first.")
+    for i in items:
+        if i.position > source.position:
+            i.position += 1
+            db.add(i)
+    item = SessionItem(
+        session_id=sess.id, saree_id=source.saree_id, position=source.position + 1,
+        drape_style=style, status=ItemStatus.queued,
+    )
+    db.add(item)
+    db.flush()
     refresh_session_status(db, sess)
     db.commit()
     request.app.state.worker.enqueue(item.id)

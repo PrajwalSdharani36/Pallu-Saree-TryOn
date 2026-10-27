@@ -192,7 +192,7 @@ class Worker:
                 person_jpeg=storage.resolve(sess.photo_file).read_bytes(),
                 saree_jpeg=storage.resolve(saree.image_file).read_bytes(),
                 saree=saree_info(saree),
-                drape_style=sess.drape_style,
+                drape_style=item.drape_style or sess.drape_style,
                 mode=sess.mode,
             )
             session_id = sess.id

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,8 +26,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -42,10 +45,11 @@ import com.pallu.tryon.ui.theme.Rozha
 import com.pallu.tryon.ui.theme.ZariLight
 
 /**
- * Session codes use A–Z without I, L and O, and the digits 2–9 (the server never makes the
- * look-alikes), so the mirror's own keypad needs exactly these 31 keys plus delete.
+ * A normal QWERTY layout, so it feels like any phone keyboard. Session codes never use the
+ * look-alikes 0, 1, I, L and O, so those keys are shown faded and can't be pressed.
  */
-private val KEY_ROWS = listOf("23456789", "ABCDEFGH", "JKMNPQRS", "TUVWXYZ")
+private val KEY_ROWS = listOf("1234567890", "QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")
+private const val CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
 
 /**
  * The code as six large boxes. Tapping them opens the mirror's keypad (the Android keyboard is never
@@ -104,8 +108,9 @@ fun CodeKeypad(
     ) {
         BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
             val wide = maxWidth > 900.dp
-            val keyHeight = if (maxWidth < 600.dp) 56.dp else 72.dp
-            val box = if (maxWidth < 600.dp) 44.dp else 64.dp
+            val short = maxHeight < 860.dp // landscape tablet: five rows of keys must still fit
+            val keyHeight = when { maxWidth < 600.dp -> 52.dp; short -> 54.dp; else -> 72.dp }
+            val box = when { maxWidth < 600.dp -> 44.dp; short -> 46.dp; else -> 64.dp }
             Column(
                 Modifier
                     .widthIn(max = 880.dp)
@@ -115,9 +120,9 @@ fun CodeKeypad(
                     .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                     // swallow taps so they don't reach the scrim
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-                    .padding(horizontal = if (wide) 40.dp else 24.dp, vertical = 28.dp),
+                    .padding(horizontal = if (wide) 40.dp else 24.dp, vertical = if (short) 18.dp else 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(if (short) 8.dp else 14.dp),
             ) {
                 Text(
                     "Type the 6-letter code",
@@ -126,13 +131,22 @@ fun CodeKeypad(
                 Muted("It’s printed under the QR code our staff gave you.", scale = 0.85f, align = TextAlign.Center)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { CodeCells(code, box, active = true) }
                 Spacer(Modifier.height(4.dp))
-                KEY_ROWS.forEachIndexed { r, keys ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        keys.forEach { c ->
-                            Key(c.toString(), keyHeight, Modifier.weight(1f), enabled = code.length < 6) { onCode(code + c) }
-                        }
-                        if (r == KEY_ROWS.lastIndex) {
-                            DeleteKey(keyHeight, Modifier.weight(1f), enabled = code.isNotEmpty()) { onCode(code.dropLast(1)) }
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val gap = if (maxWidth < 600.dp) 6.dp else 10.dp
+                    val keyW = (maxWidth - gap * 9) / 10
+                    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                        KEY_ROWS.forEachIndexed { r, keys ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally)) {
+                                keys.forEach { c ->
+                                    val usable = c in CODE_CHARS
+                                    Key(c.toString(), keyHeight, Modifier.width(keyW), enabled = usable && code.length < 6, faded = !usable) {
+                                        onCode(code + c)
+                                    }
+                                }
+                                if (r == KEY_ROWS.lastIndex) {
+                                    DeleteKey(keyHeight, Modifier.width(keyW * 1.5f + gap), enabled = code.isNotEmpty()) { onCode(code.dropLast(1)) }
+                                }
+                            }
                         }
                     }
                 }
@@ -153,17 +167,18 @@ fun CodeKeypad(
 }
 
 @Composable
-private fun Key(label: String, height: Dp, modifier: Modifier, enabled: Boolean, onClick: () -> Unit) {
+private fun Key(label: String, height: Dp, modifier: Modifier, enabled: Boolean, faded: Boolean, onClick: () -> Unit) {
     Box(
         modifier
             .height(height)
+            .alpha(if (faded) 0.28f else 1f)
             .clip(RoundedCornerShape(14.dp))
-            .background(MirrorRaised2)
+            .background(if (faded) Mirror else MirrorRaised2)
             .border(1.dp, MirrorLine, RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+            .then(if (faded) Modifier.clearAndSetSemantics {} else Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, fontFamily = Rozha, fontSize = (height.value * 0.42f).sp, color = if (enabled) OnMirror else OnMirror.copy(alpha = 0.4f))
+        Text(label, fontFamily = Rozha, fontSize = (height.value * 0.42f).sp, color = if (enabled || faded) OnMirror else OnMirror.copy(alpha = 0.4f))
     }
 }
 

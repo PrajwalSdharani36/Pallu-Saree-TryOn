@@ -34,6 +34,7 @@ data class SessionItem(
     val id: String,
     val position: Int,
     val status: String,
+    @SerialName("drape_style") val drapeStyle: String = "nivi",
     val favorite: Boolean,
     val error: String = "",
     @SerialName("result_url") val resultUrl: String? = null,
@@ -85,6 +86,9 @@ data class AddItemBody(val barcode: String? = null, @SerialName("saree_id") val 
 data class FavoriteBody(val favorite: Boolean)
 
 @Serializable
+data class RedrapeBody(@SerialName("drape_style") val drapeStyle: String)
+
+@Serializable
 data class SessionUpdateBody(
     @SerialName("drape_style") val drapeStyle: String? = null,
     val mode: String? = null,
@@ -102,3 +106,5 @@ val DRAPES = listOf(
     DrapeInfo("nauvari", "Nauvari", "Maharashtrian nine-yard drape, tucked at the back like a dhoti."),
     DrapeInfo("modern", "Modern", "Slim pre-pleated drape with a pinned, narrow pallu."),
 )
+
+fun drapeLabel(id: String): String = DRAPES.firstOrNull { it.id == id }?.label ?: id.replaceFirstChar { it.uppercase() }

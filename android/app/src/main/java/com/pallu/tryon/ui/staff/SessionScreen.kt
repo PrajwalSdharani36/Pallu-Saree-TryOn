@@ -322,9 +322,11 @@ private fun ItemRow(item: SessionItem, modifier: Modifier) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(item.saree.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (item.saree.price > 0) {
-                    Text(rupees(item.saree.price), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                Text(
+                    listOf(rupees(item.saree.price).takeIf { item.saree.price > 0 }, "${com.pallu.tryon.data.drapeLabel(item.drapeStyle)} drape")
+                        .filterNotNull().joinToString(", "),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             StatusChip(item.status)
             if (item.favorite) {

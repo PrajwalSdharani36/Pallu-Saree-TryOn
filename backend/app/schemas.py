@@ -70,6 +70,7 @@ class ItemOut(BaseModel):
     id: str
     position: int
     status: str
+    drape_style: str
     favorite: bool
     error: str
     result_url: Optional[str]
@@ -106,6 +107,7 @@ class SessionOut(BaseModel):
                 id=i.id,
                 position=i.position,
                 status=i.status.value,
+                drape_style=i.drape_style or sess.drape_style,
                 favorite=i.favorite,
                 error=i.error,
                 result_url=(
@@ -154,6 +156,10 @@ class SessionUpdate(BaseModel):
 class AddItem(BaseModel):
     barcode: Optional[str] = None
     saree_id: Optional[str] = None
+
+
+class RedrapeIn(BaseModel):
+    drape_style: str
 
 
 class FavoriteIn(BaseModel):
