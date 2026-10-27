@@ -341,6 +341,12 @@ class MirrorWalkthroughTest {
 
     private fun clickRetry(sel: BySelector) {
         repeat(3) { if (runCatching { find(sel).click() }.isSuccess) return else SystemClock.sleep(400) }
+        // a node that keeps being redrawn can go stale between finding and clicking: tap where it is
+        repeat(4) {
+            val c = runCatching { find(sel).visibleCenter }.getOrNull()
+            if (c != null) { device.click(c.x, c.y); return }
+            SystemClock.sleep(300)
+        }
         find(sel).click()
     }
 
