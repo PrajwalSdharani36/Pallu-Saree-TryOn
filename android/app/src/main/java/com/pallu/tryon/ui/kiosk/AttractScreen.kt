@@ -78,8 +78,9 @@ fun AttractScreen(
     var code by remember { mutableStateOf("") }
     var askExit by remember { mutableStateOf(false) }
     // While the on-screen keyboard is up, the welcome text and sarees step aside so the code stays visible.
-    // Typing mode follows the code box's focus (steady while the keyboard is up; the keyboard's own
-    // "visible" signal flickers while it animates). When the keyboard is put away, typing mode ends.
+    // Typing mode follows the code box's focus (steady while the keyboard is up). When the keyboard is
+    // put away, typing mode ends. The camera window stays put while typing: removing a camera view
+    // takes focus away from the code box and closes the keyboard again.
     var codeFocused by remember { mutableStateOf(false) }
     val keyboardUp = WindowInsets.isImeVisible
     val focusManager = LocalFocusManager.current
@@ -146,7 +147,7 @@ fun AttractScreen(
                         }
                         StartCard(
                             vm, hasCamera, code, { code = it }, onSession, scanFront, onScanFront,
-                            onCodeFocus = { codeFocused = it }, vertical = false, showScanner = !typing, modifier = Modifier.fillMaxWidth(),
+                            onCodeFocus = { codeFocused = it }, vertical = false, modifier = Modifier.fillMaxWidth(),
                         )
                     }
                     ErrorNote(state.error)
