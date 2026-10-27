@@ -74,6 +74,7 @@ import com.pallu.tryon.ui.theme.Kumkum
 import com.pallu.tryon.ui.theme.Mirror
 import com.pallu.tryon.ui.theme.MirrorDeep
 import com.pallu.tryon.ui.theme.MirrorRaised
+import com.pallu.tryon.ui.theme.MirrorStrong
 import com.pallu.tryon.ui.theme.OnMirror
 import com.pallu.tryon.ui.theme.Rozha
 import com.pallu.tryon.ui.theme.ZariLight
@@ -84,7 +85,13 @@ import java.util.concurrent.Executors
 private const val COUNTDOWN_SECONDS = 4
 
 @Composable
-fun CaptureScreen(vm: KioskViewModel, onBack: () -> Unit, onUploaded: () -> Unit) {
+fun CaptureScreen(
+    vm: KioskViewModel,
+    photoFront: Boolean,
+    onPhotoFront: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    onUploaded: () -> Unit,
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     val gift = state.mode == TryOnMode.GIFT
 
@@ -92,13 +99,13 @@ fun CaptureScreen(vm: KioskViewModel, onBack: () -> Unit, onUploaded: () -> Unit
         when {
             state.photoPreview != null -> Review(state, onRetake = { vm.setPhoto(null) }, onUse = { vm.upload(onUploaded) })
             gift -> KioskPage { PickPhoto(vm, onBack) }
-            else -> LiveCamera(vm, onBack)
+            else -> LiveCamera(vm, photoFront, onPhotoFront, onBack)
         }
     }
 }
 
 @Composable
-private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
+private fun LiveCamera(vm: KioskViewModel, front: Boolean, onFront: (Boolean) -> Unit, onBack: () -> Unit) {
     val hasCamera = rememberCameraPermission()
     val camera = remember { PhotoCamera() }
     val executor = remember { Executors.newSingleThreadExecutor() }
@@ -147,7 +154,7 @@ private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
         if (hasCamera) {
             // PreviewView already mirrors the front camera like a real mirror; the saved photo is not mirrored.
-            PhotoCameraView(Modifier.fillMaxSize(), camera, useFrontCamera = true)
+            PhotoCameraView(Modifier.fillMaxSize(), camera, useFrontCamera = front)
             BodyGuide(Modifier.fillMaxSize())
         } else {
             Text(
@@ -187,7 +194,7 @@ private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
                     transitionSpec = { (scaleIn(initialScale = 1.35f) + fadeIn()) togetherWith fadeOut() },
                     label = "countdown",
                 ) { n ->
-                    Text("$n", fontFamily = Rozha, fontSize = 160.sp, color = Color(0xFFFFF6E6))
+                    Text("$n", fontFamily = Rozha, fontSize = 160.sp, color = MirrorStrong)
                 }
             }
         }
@@ -219,7 +226,11 @@ private fun LiveCamera(vm: KioskViewModel, onBack: () -> Unit) {
                 )
             }
             Spacer(Modifier.weight(1f))
-            Spacer(Modifier.size(64.dp))
+            if (hasCamera && countdown == 0) {
+                CameraFlipButton(front = front, onChange = onFront)
+            } else {
+                Spacer(Modifier.size(64.dp))
+            }
         }
         ErrorNote(error, Modifier.align(Alignment.BottomCenter).padding(bottom = 120.dp).widthIn(max = 560.dp))
 

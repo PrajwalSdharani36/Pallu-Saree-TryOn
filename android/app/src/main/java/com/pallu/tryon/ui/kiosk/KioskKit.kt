@@ -1,5 +1,12 @@
 package com.pallu.tryon.ui.kiosk
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -37,7 +44,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,17 +78,21 @@ import com.pallu.tryon.ui.theme.PeacockDeep
 import com.pallu.tryon.ui.theme.Rozha
 import com.pallu.tryon.ui.theme.ZariBorder
 import com.pallu.tryon.ui.theme.ZariLight
+import com.pallu.tryon.ui.theme.mirrorPalette
 import com.pallu.tryon.ui.theme.rememberSweep
+import kotlinx.coroutines.delay
 
 fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
 /** Every kiosk screen sits between two woven borders; the top one catches the light. */
 @Composable
 fun KioskPage(content: @Composable () -> Unit) {
+    val p = mirrorPalette
+    val h = if (p.light) 24.dp else 30.dp
     Column(Modifier.fillMaxSize().background(Mirror)) {
-        ZariBorder(height = 30.dp, sheen = true)
+        ZariBorder(height = h, ground = p.borderGround, band = p.borderBand, gold = p.borderGold, sheen = !p.light)
         Box(Modifier.weight(1f).fillMaxWidth()) { content() }
-        ZariBorder(height = 30.dp, flip = true)
+        ZariBorder(height = h, ground = p.borderGround, band = p.borderBand, gold = p.borderGold, flip = true)
     }
 }
 
@@ -203,8 +218,20 @@ fun ScanWindow(modifier: Modifier = Modifier, content: @Composable BoxScope.() -
 
 /** Six letter boxes for the session code, backed by one text field (so the keyboard just works). */
 @Composable
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 fun CodeBoxes(value: String, onValueChange: (String) -> Unit, onDone: () -> Unit, boxSize: Dp = 48.dp) {
+    // When the keyboard opens, scroll the boxes into view so customers can see what they type.
+    val bring = remember { BringIntoViewRequester() }
+    var focused by remember { mutableStateOf(false) }
+    val keyboardUp = WindowInsets.isImeVisible
+    LaunchedEffect(focused, keyboardUp) {
+        if (focused && keyboardUp) {
+            delay(250) // let the keyboard finish sliding in
+            bring.bringIntoView()
+        }
+    }
     BasicTextField(
+        modifier = Modifier.bringIntoViewRequester(bring).onFocusChanged { focused = it.isFocused },
         value = value,
         onValueChange = { raw -> onValueChange(raw.filter { it.isLetterOrDigit() }.uppercase().take(6)) },
         singleLine = true,

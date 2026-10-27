@@ -1,6 +1,7 @@
 package com.pallu.tryon.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -17,6 +18,11 @@ data class AppSettings(
     val mode: AppMode? = null,
     val storeName: String = "",
     val kioskIdleSeconds: Int = 90,
+    /** Mirror cameras: true = front (selfie) camera, false = back camera. Saved per device. */
+    val scanFront: Boolean = true,
+    val photoFront: Boolean = true,
+    /** Mirror look: false = dark (default), true = light ivory. Saved per device. */
+    val kioskLight: Boolean = false,
 ) {
     val isConfigured get() = serverUrl.isNotBlank() && apiKey.isNotBlank() && mode != null
 }
@@ -28,6 +34,9 @@ class SettingsStore(private val context: Context) {
         val mode = stringPreferencesKey("mode")
         val store = stringPreferencesKey("store_name")
         val idle = intPreferencesKey("kiosk_idle_s")
+        val scanFront = booleanPreferencesKey("kiosk_scan_front")
+        val photoFront = booleanPreferencesKey("kiosk_photo_front")
+        val light = booleanPreferencesKey("kiosk_light")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -37,6 +46,9 @@ class SettingsStore(private val context: Context) {
             mode = p[Keys.mode]?.let { runCatching { AppMode.valueOf(it) }.getOrNull() },
             storeName = p[Keys.store] ?: "",
             kioskIdleSeconds = p[Keys.idle] ?: 90,
+            scanFront = p[Keys.scanFront] ?: true,
+            photoFront = p[Keys.photoFront] ?: true,
+            kioskLight = p[Keys.light] ?: false,
         )
     }
 
@@ -50,6 +62,18 @@ class SettingsStore(private val context: Context) {
             p[Keys.store] = s.storeName
             p[Keys.idle] = s.kioskIdleSeconds
         }
+    }
+
+    /** Remembers which camera the mirror uses for the QR code and for the photo. */
+    suspend fun setCameras(scanFront: Boolean? = null, photoFront: Boolean? = null) {
+        context.dataStore.edit { p ->
+            if (scanFront != null) p[Keys.scanFront] = scanFront
+            if (photoFront != null) p[Keys.photoFront] = photoFront
+        }
+    }
+
+    suspend fun setKioskLight(light: Boolean) {
+        context.dataStore.edit { it[Keys.light] = light }
     }
 
     suspend fun clearMode() {

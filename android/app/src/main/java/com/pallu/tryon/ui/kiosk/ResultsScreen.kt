@@ -78,6 +78,7 @@ import com.pallu.tryon.ui.theme.MirrorLine
 import com.pallu.tryon.ui.theme.MirrorRaised
 import com.pallu.tryon.ui.theme.MirrorRaised2
 import com.pallu.tryon.ui.theme.OnGold
+import com.pallu.tryon.ui.theme.MirrorStrong
 import com.pallu.tryon.ui.theme.OnMirror
 import com.pallu.tryon.ui.theme.OnMirrorFaint
 import com.pallu.tryon.ui.theme.OnMirrorMuted
@@ -408,7 +409,7 @@ private fun StepRow(label: String, done: Boolean, now: Boolean) {
         Text(
             label,
             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-            color = when { now -> Color(0xFFFFF6E6); done -> OnMirror; else -> OnMirrorFaint },
+            color = when { now -> MirrorStrong; done -> OnMirror; else -> OnMirrorFaint },
         )
     }
 }

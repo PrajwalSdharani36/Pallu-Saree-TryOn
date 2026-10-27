@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,7 +38,11 @@ import com.pallu.tryon.ui.staff.ScanScreen
 import com.pallu.tryon.ui.staff.SessionScreen
 import com.pallu.tryon.ui.staff.StaffHomeScreen
 import com.pallu.tryon.ui.staff.StaffViewModel
+import com.pallu.tryon.ui.theme.DarkMirror
+import com.pallu.tryon.ui.theme.LightMirror
 import com.pallu.tryon.ui.theme.PalluTheme
+import com.pallu.tryon.ui.theme.mirrorPalette
+import kotlinx.coroutines.launch
 import com.pallu.tryon.ui.theme.Silk
 
 object Routes {
@@ -63,6 +69,7 @@ fun PalluNav(container: AppContainer) {
             return@PalluTheme
         }
         val repo = remember(s.serverUrl, s.apiKey) { container.repository(s) }
+        LaunchedEffect(s.kioskLight) { mirrorPalette = if (s.kioskLight) LightMirror else DarkMirror }
         val start = remember {
             when {
                 !s.isConfigured -> Routes.SETUP
@@ -89,6 +96,12 @@ private fun Graph(
     kioskVm: KioskViewModel,
 ) {
     fun goRoot(route: String) = nav.navigate(route) { popUpTo(nav.graph.id) { inclusive = true }; launchSingleTop = true }
+    val scope = rememberCoroutineScope()
+    val toggleLight: () -> Unit = {
+        val light = !settings.kioskLight
+        mirrorPalette = if (light) LightMirror else DarkMirror // repaint at once; the save follows
+        scope.launch { container.settingsStore.setKioskLight(light) }
+    }
 
     NavHost(navController = nav, startDestination = start) {
         composable(Routes.SETUP) {
@@ -129,11 +142,13 @@ private fun Graph(
 
         // ---------------- kiosk ----------------
         composable(Routes.KIOSK) {
-            KioskFrame(kioskVm, idleSeconds = settings.kioskIdleSeconds, onIdle = {}) {
+            KioskFrame(kioskVm, idleSeconds = settings.kioskIdleSeconds, onIdle = {}, light = settings.kioskLight, onToggleLight = toggleLight) {
                 AttractScreen(
                     vm = kioskVm,
                     storeName = settings.storeName,
                     apiKey = settings.apiKey,
+                    scanFront = settings.scanFront,
+                    onScanFront = { front -> scope.launch { container.settingsStore.setCameras(scanFront = front) } },
                     onSession = { hasPhoto ->
                         // a staff member may already have added a gift photo: go straight to the looks
                         nav.navigate(if (hasPhoto) Routes.KIOSK_RESULTS else Routes.KIOSK_CONSENT)
@@ -143,7 +158,7 @@ private fun Graph(
             }
         }
         composable(Routes.KIOSK_CONSENT) {
-            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }) {
+            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }, light = settings.kioskLight, onToggleLight = toggleLight) {
                 ConsentScreen(
                     vm = kioskVm,
                     onBack = { kioskVm.reset(); goRoot(Routes.KIOSK) },
@@ -155,16 +170,18 @@ private fun Graph(
             }
         }
         composable(Routes.KIOSK_CAPTURE) {
-            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }) {
+            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }, light = settings.kioskLight, onToggleLight = toggleLight) {
                 CaptureScreen(
                     vm = kioskVm,
+                    photoFront = settings.photoFront,
+                    onPhotoFront = { front -> scope.launch { container.settingsStore.setCameras(photoFront = front) } },
                     onBack = { nav.popBackStack() },
                     onUploaded = { nav.navigate(Routes.KIOSK_RESULTS) { popUpTo(Routes.KIOSK_CONSENT) { inclusive = true } } },
                 )
             }
         }
         composable(Routes.KIOSK_WAIT_GIFT) {
-            KioskFrame(kioskVm, settings.kioskIdleSeconds * 3, onIdle = { goRoot(Routes.KIOSK) }) {
+            KioskFrame(kioskVm, settings.kioskIdleSeconds * 3, onIdle = { goRoot(Routes.KIOSK) }, light = settings.kioskLight, onToggleLight = toggleLight) {
                 WaitGiftScreen(
                     vm = kioskVm,
                     onArrived = { nav.navigate(Routes.KIOSK_RESULTS) { popUpTo(Routes.KIOSK_CONSENT) { inclusive = true } } },
@@ -174,7 +191,7 @@ private fun Graph(
             }
         }
         composable(Routes.KIOSK_RESULTS) {
-            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }) {
+            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }, light = settings.kioskLight, onToggleLight = toggleLight) {
                 ResultsScreen(
                     vm = kioskVm,
                     onRetake = { nav.navigate(Routes.KIOSK_CAPTURE) },
@@ -183,7 +200,7 @@ private fun Graph(
             }
         }
         composable(Routes.KIOSK_THANKS) {
-            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }) {
+            KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }, light = settings.kioskLight, onToggleLight = toggleLight) {
                 ThankYouScreen(vm = kioskVm, onDone = { kioskVm.reset(); goRoot(Routes.KIOSK) })
             }
         }

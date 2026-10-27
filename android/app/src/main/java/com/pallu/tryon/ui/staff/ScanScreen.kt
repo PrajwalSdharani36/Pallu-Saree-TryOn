@@ -71,7 +71,7 @@ import com.pallu.tryon.ui.common.rememberCameraPermission
 import com.pallu.tryon.ui.common.rupees
 import com.pallu.tryon.ui.theme.Peacock
 import com.pallu.tryon.ui.theme.Rozha
-import com.pallu.tryon.ui.theme.ZariLight
+import com.pallu.tryon.ui.theme.ZariGold
 import com.pallu.tryon.ui.theme.rememberSweep
 import kotlinx.coroutines.delay
 
@@ -253,7 +253,7 @@ private fun ScanFrame(modifier: Modifier) {
         drawRect(dim, topLeft = Offset(0f, top), size = androidx.compose.ui.geometry.Size(left, fh))
         drawRect(dim, topLeft = Offset(left + fw, top), size = androidx.compose.ui.geometry.Size(size.width - left - fw, fh))
         drawRoundRect(
-            ZariLight, topLeft = Offset(left, top), size = androidx.compose.ui.geometry.Size(fw, fh),
+            ZariGold, topLeft = Offset(left, top), size = androidx.compose.ui.geometry.Size(fw, fh),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
             style = androidx.compose.ui.graphics.drawscope.Stroke(3.dp.toPx()),
         )
@@ -283,7 +283,7 @@ private fun ScannedRow(s: Saree, highlight: Boolean, onRemove: (() -> Unit)?, mo
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         color = if (highlight) Color(0xFFFBF3DF) else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, if (highlight) ZariLight else MaterialTheme.colorScheme.outline),
+        border = BorderStroke(1.dp, if (highlight) ZariGold else MaterialTheme.colorScheme.outline),
     ) {
         Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             RemoteImage(s.imageUrl, s.name, Modifier.size(48.dp, 60.dp).clip(RoundedCornerShape(7.dp)))

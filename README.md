@@ -163,4 +163,4 @@ The engine is a small interface (`backend/app/engines/base.py`). To try a self-h
 
 Inspired by Sohan Rai's *Cloakroom* saree kiosk demo, and by the mirror-kiosk layout of [Insta-Fit AI Virtual Trial Room](https://github.com/Abhi2790/Insta-Fit-AI-Virtual-Trial-Room). Pallu is an independent project and shares no code with either.
 
-Fonts: [Rozha One](https://fonts.google.com/specimen/Rozha+One) (Indian Type Foundry) and [Mukta](https://fonts.google.com/specimen/Mukta) (Ek Type), SIL Open Font License; see `android/fonts-license/`.
+Fonts: [Fraunces](https://fonts.google.com/specimen/Fraunces) (Undercase Type, soft SemiBold for headings), [Rozha One](https://fonts.google.com/specimen/Rozha+One) (Indian Type Foundry) and [Mukta](https://fonts.google.com/specimen/Mukta) (Ek Type), SIL Open Font License; see `android/fonts-license/`.

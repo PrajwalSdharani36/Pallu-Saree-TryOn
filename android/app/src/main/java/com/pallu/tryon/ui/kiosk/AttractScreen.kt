@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,12 +59,14 @@ import com.pallu.tryon.ui.theme.SareeMark
 import com.pallu.tryon.ui.theme.ZariLight
 
 /** Idle screen of the mirror: waits for the customer's QR code. */
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun AttractScreen(
     vm: KioskViewModel,
     storeName: String,
     apiKey: String,
+    scanFront: Boolean,
+    onScanFront: (Boolean) -> Unit,
     onSession: (alreadyHasPhoto: Boolean) -> Unit,
     onExitKiosk: () -> Unit,
 ) {
@@ -68,6 +74,8 @@ fun AttractScreen(
     val hasCamera = rememberCameraPermission()
     var code by remember { mutableStateOf("") }
     var askExit by remember { mutableStateOf(false) }
+    // While the on-screen keyboard is up, the welcome text and sarees step aside so the code stays visible.
+    val typing = WindowInsets.isImeVisible
 
     KioskPage {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -80,7 +88,7 @@ fun AttractScreen(
 
             if (compact) {
                 Column(
-                    Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState())
                         .padding(horizontal = 20.dp, vertical = 28.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
@@ -88,7 +96,7 @@ fun AttractScreen(
                     Headline(0.5f)
                     if (roomForFan) SareeFan(state.showcase, Modifier.fillMaxWidth().height(190.dp))
                     StartCard(
-                        vm, hasCamera, code, { code = it }, onSession,
+                        vm, hasCamera, code, { code = it }, onSession, scanFront, onScanFront,
                         vertical = true, compact = true, modifier = Modifier.fillMaxWidth(),
                     )
                     ErrorNote(state.error)
@@ -96,7 +104,7 @@ fun AttractScreen(
                 }
             } else {
                 Column(
-                    Modifier.fillMaxSize().padding(start = side, end = side, top = 56.dp * k, bottom = 28.dp),
+                    Modifier.fillMaxSize().imePadding().padding(start = side, end = side, top = 56.dp * k, bottom = 28.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp * k),
                 ) {
                     StoreName(storeName) { askExit = true }
@@ -108,19 +116,26 @@ fun AttractScreen(
                             }
                             StartCard(
                                 vm = vm, hasCamera = hasCamera, code = code, onCode = { code = it },
-                                onSession = onSession, vertical = true,
+                                onSession = onSession, scanFront = scanFront, onScanFront = onScanFront, vertical = true,
                                 // fixed width: six code boxes + Start must always fit
                                 modifier = Modifier.width(400.dp).verticalScroll(rememberScrollState()),
                             )
                         }
                     } else {
-                        Headline(k)
-                        // takes whatever height is left, so the card, errors and privacy line always fit below
-                        SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
-                        StartCard(vm, hasCamera, code, { code = it }, onSession, vertical = false, modifier = Modifier.fillMaxWidth())
+                        if (!typing) {
+                            Headline(k)
+                            // takes whatever height is left, so the card, errors and privacy line always fit below
+                            SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
+                        } else {
+                            Spacer(Modifier.weight(1f))
+                        }
+                        StartCard(
+                            vm, hasCamera, code, { code = it }, onSession, scanFront, onScanFront,
+                            vertical = false, showScanner = !typing, modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                     ErrorNote(state.error)
-                    PrivacyLine()
+                    if (!typing) PrivacyLine()
                 }
             }
         }
@@ -211,15 +226,18 @@ private fun StartCard(
     code: String,
     onCode: (String) -> Unit,
     onSession: (Boolean) -> Unit,
+    scanFront: Boolean,
+    onScanFront: (Boolean) -> Unit,
     vertical: Boolean,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    showScanner: Boolean = true,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val scanner: @Composable (Modifier) -> Unit = { m ->
         ScanWindow(m) {
             if (hasCamera) {
-                BarcodeScannerView(Modifier.fillMaxSize(), ScanKind.QR, useFrontCamera = true) { c -> vm.lookup(c, onSession) }
+                BarcodeScannerView(Modifier.fillMaxSize(), ScanKind.QR, useFrontCamera = scanFront) { c -> vm.lookup(c, onSession) }
             } else {
                 Text(
                     "Camera is off. Type your code instead.",
@@ -240,7 +258,7 @@ private fun StartCard(
                 color = OnMirror,
             )
             Muted("Or type the 6-letter code", scale = 0.82f)
-            CodeBoxes(code, onCode, onDone = { vm.lookup(code, onSession) }, boxSize = if (compact) 38.dp else 44.dp)
+            CodeBoxes(code, onCode, onDone = { vm.lookup(code, onSession) }, boxSize = if (compact) 38.dp else if (!showScanner) 64.dp else 44.dp)
             GoldButton(
                 if (state.lookingUp) "Finding your sarees…" else "Start",
                 onClick = { vm.lookup(code, onSession) },
@@ -256,15 +274,24 @@ private fun StartCard(
             .border(1.dp, ZariLight.copy(alpha = 0.28f), RoundedCornerShape(22.dp))
             .padding(if (compact) 18.dp else 26.dp),
     ) {
+        val switch: @Composable () -> Unit = {
+            if (hasCamera) CameraSwitch(front = scanFront, onChange = onScanFront)
+        }
         if (vertical) {
             Column(verticalArrangement = Arrangement.spacedBy(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 // capped so the camera window never pushes the code boxes off a phone screen
                 scanner(Modifier.widthIn(max = if (compact) 260.dp else 170.dp).fillMaxWidth(if (compact) 0.8f else 1f).aspectRatio(1f))
+                switch()
                 words(Modifier.fillMaxWidth())
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(30.dp), verticalAlignment = Alignment.CenterVertically) {
-                scanner(Modifier.size(236.dp))
+                if (showScanner) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        scanner(Modifier.size(236.dp))
+                        switch()
+                    }
+                }
                 words(Modifier.weight(1f))
             }
         }

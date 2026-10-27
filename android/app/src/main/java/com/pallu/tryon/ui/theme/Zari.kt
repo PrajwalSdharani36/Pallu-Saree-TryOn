@@ -35,7 +35,7 @@ fun ZariBorder(
     height: Dp = 22.dp,
     ground: Color = TempleRed,
     band: Color = Arakku,
-    gold: Color = ZariLight,
+    gold: Color = ZariGold,
     sheen: Boolean = false,
     flip: Boolean = false,
 ) {

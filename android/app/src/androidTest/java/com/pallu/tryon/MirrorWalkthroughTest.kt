@@ -52,6 +52,7 @@ class MirrorWalkthroughTest {
     private val key = args.getString("key") ?: "ci-key"
     private val shots = File(context.getExternalFilesDir(null), "shots").apply { mkdirs() }
     private var prefix = ""
+    private var light = false
 
     // ------------------------------------------------------------------ tests
 
@@ -61,6 +62,17 @@ class MirrorWalkthroughTest {
         mirrorVisit()
         giftVisit()
         setupScreen()
+    }
+
+    @Test
+    fun tabletLight() = walk("tab-light_") {
+        device.setOrientationNatural()
+        light = true
+        mirrorVisit()
+        // the corner switch flips the mirror back to dark straight away
+        find(By.desc("Dark theme")).click()
+        shot("15_switched_to_dark", settle = 1500)
+        light = false
     }
 
     @Test
@@ -85,6 +97,13 @@ class MirrorWalkthroughTest {
         launch()
         find(By.textContains("Hold up the QR code"), 20_000)
         shot("01_welcome", settle = 3500)
+
+        // tapping the code boxes opens the keyboard; the code must stay in view above it
+        find(By.clazz("android.widget.EditText")).click()
+        SystemClock.sleep(2000)
+        shot("01b_keyboard", settle = 0)
+        device.pressBack()
+        SystemClock.sleep(1000)
 
         // a mistyped code shows a friendly error
         typeCode("ZZZZZZ")
@@ -185,7 +204,7 @@ class MirrorWalkthroughTest {
 
     private fun configure(mode: AppMode) = runBlocking {
         app.container.settingsStore.save(
-            AppSettings(serverUrl = server, apiKey = key, mode = mode, storeName = "Lakshmi Silks", kioskIdleSeconds = 900),
+            AppSettings(serverUrl = server, apiKey = key, mode = mode, storeName = "Lakshmi Silks", kioskIdleSeconds = 900, kioskLight = light),
         )
     }
 

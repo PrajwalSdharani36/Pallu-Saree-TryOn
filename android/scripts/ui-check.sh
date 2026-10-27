@@ -16,6 +16,7 @@ run() {  # one test method at a time, so the screen size can be changed between 
 adb shell wm size reset; adb shell wm density reset    # the tablet itself
 adb shell wm size >> "$OUT/instrument.txt"
 run tabletPortrait
+run tabletLight
 run tabletLandscape
 adb shell wm size 1080x2400; adb shell wm density 420  # a typical staff phone
 run phoneStaff
