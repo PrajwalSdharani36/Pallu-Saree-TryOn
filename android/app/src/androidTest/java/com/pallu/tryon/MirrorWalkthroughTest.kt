@@ -347,7 +347,9 @@ class MirrorWalkthroughTest {
     private fun tapText(text: String) {
         find(By.text(text))
         val o = device.findObject(UiSelector().text(text))
-        repeat(5) { if (runCatching { o.click() }.getOrDefault(false)) return else SystemClock.sleep(400) }
+        // click() may report false with Compose even though the tap landed, so tap once; the
+        // next step waits for whatever the tap should open
+        if (runCatching { o.click() }.isSuccess) return
         clickRetry(By.text(text))
     }
 
