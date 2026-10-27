@@ -56,7 +56,7 @@ fun rupees(amount: Int): String = if (amount > 0) "₹" + inr.format(amount) els
 fun StoreHeader(title: String, subtitle: String? = null, onBack: (() -> Unit)? = null, actions: @Composable () -> Unit = {}) {
     Column(Modifier.background(ArakkuDeep)) {
         Row(
-            Modifier.fillMaxWidth().statusBarsPadding().padding(start = 8.dp, end = 8.dp, top = 10.dp, bottom = 8.dp),
+            Modifier.fillMaxWidth().statusBarsPadding().padding(start = 10.dp, end = 10.dp, top = 16.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (onBack != null) {
@@ -84,9 +84,9 @@ fun ErrorNote(message: String?, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(14.dp),
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             Spacer(Modifier.width(10.dp))
             Text(message, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
@@ -105,8 +105,8 @@ fun BigButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 56.dp),
-        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.heightIn(min = 60.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(containerColor = container),
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge)

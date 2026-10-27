@@ -22,6 +22,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +50,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -73,7 +75,9 @@ import com.pallu.tryon.ui.theme.GoldBright
 import com.pallu.tryon.ui.theme.Kumkum
 import com.pallu.tryon.ui.theme.Mirror
 import com.pallu.tryon.ui.theme.MirrorDeep
-import com.pallu.tryon.ui.theme.MirrorRaised
+import com.pallu.tryon.ui.theme.GlassLine
+import com.pallu.tryon.ui.theme.GlassStrong
+import com.pallu.tryon.ui.theme.mirrorPalette
 import com.pallu.tryon.ui.theme.MirrorStrong
 import com.pallu.tryon.ui.theme.OnMirror
 import com.pallu.tryon.ui.theme.Rozha
@@ -98,7 +102,7 @@ fun CaptureScreen(
     Box(Modifier.fillMaxSize().background(MirrorDeep)) {
         when {
             state.photoPreview != null -> Review(state, onRetake = { vm.setPhoto(null) }, onUse = { vm.upload(onUploaded) })
-            gift -> KioskPage { PickPhoto(vm, onBack) }
+            gift -> KioskPage(ambient = state.session?.items?.firstOrNull()?.saree?.imageUrl) { PickPhoto(vm, onBack) }
             else -> LiveCamera(vm, photoFront, onPhotoFront, onBack)
         }
     }
@@ -165,24 +169,26 @@ private fun LiveCamera(vm: KioskViewModel, front: Boolean, onFront: (Boolean) ->
             )
         }
 
-        Column(
-            Modifier.align(Alignment.TopCenter).fillMaxWidth().background(MirrorDeep.copy(alpha = 0.78f)).padding(horizontal = 40.dp, vertical = 34.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        GlassPanel(
+            Modifier.align(Alignment.TopCenter).padding(start = KioskSide, end = ThemeSwitchRoom, top = 30.dp).fillMaxWidth(),
+            strong = true,
+            padding = PaddingValues(horizontal = 30.dp, vertical = 24.dp),
         ) {
-            Text(
-                "Fit your whole body inside the outline",
-                fontFamily = Rozha, fontSize = 38.sp, lineHeight = 44.sp, color = OnMirror, textAlign = TextAlign.Center,
-            )
-            Muted("Stand straight, arms a little away from your sides, facing the mirror.", scale = 0.9f, align = TextAlign.Center)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Fit your whole body inside the outline",
+                    fontFamily = Rozha, fontSize = 36.sp, lineHeight = 42.sp, color = OnMirror, textAlign = TextAlign.Center,
+                )
+                Muted("Stand straight, arms a little away from your sides, facing the mirror.", scale = 0.88f, align = TextAlign.Center)
+            }
         }
 
         if (countdown > 0) {
             Box(Modifier.align(Alignment.Center).size(250.dp), contentAlignment = Alignment.Center) {
                 Canvas(Modifier.fillMaxSize()) {
                     val stroke = 8.dp.toPx()
-                    drawCircle(MirrorDeep.copy(alpha = 0.55f))
-                    drawCircle(Color.White.copy(alpha = 0.18f), style = Stroke(stroke))
+                    drawCircle(Color.Black.copy(alpha = 0.45f))
+                    drawCircle(Color.White.copy(alpha = 0.22f), style = Stroke(stroke))
                     drawArc(
                         GoldBright, startAngle = -90f, sweepAngle = 360f * ring, useCenter = false,
                         topLeft = Offset(stroke / 2, stroke / 2), size = Size(size.width - stroke, size.height - stroke),
@@ -194,23 +200,23 @@ private fun LiveCamera(vm: KioskViewModel, front: Boolean, onFront: (Boolean) ->
                     transitionSpec = { (scaleIn(initialScale = 1.35f) + fadeIn()) togetherWith fadeOut() },
                     label = "countdown",
                 ) { n ->
-                    Text("$n", fontFamily = Rozha, fontSize = 160.sp, color = MirrorStrong)
+                    Text("$n", fontFamily = Rozha, fontSize = 160.sp, color = Color.White)
                 }
             }
         }
 
         Row(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(MirrorDeep.copy(alpha = 0.82f))
-                .padding(horizontal = 40.dp, vertical = 28.dp),
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .padding(horizontal = KioskSide, vertical = 30.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            QuietButton("Back", onBack)
+            OutlineButton("Back", onBack, modifier = Modifier.background(GlassStrong, RoundedCornerShape(50)))
             Spacer(Modifier.weight(1f))
             if (countdown > 0) {
                 Row(
-                    Modifier.clip(RoundedCornerShape(50)).background(MirrorRaised)
-                        .border(1.dp, ZariLight.copy(alpha = 0.4f), RoundedCornerShape(50))
-                        .padding(horizontal = 30.dp, vertical = 16.dp),
+                    Modifier.clip(RoundedCornerShape(50)).background(GlassStrong)
+                        .border(1.dp, GlassLine, RoundedCornerShape(50))
+                        .padding(horizontal = 34.dp, vertical = 18.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.size(12.dp).clip(CircleShape).background(Kumkum))
@@ -232,7 +238,7 @@ private fun LiveCamera(vm: KioskViewModel, front: Boolean, onFront: (Boolean) ->
                 Spacer(Modifier.size(64.dp))
             }
         }
-        ErrorNote(error, Modifier.align(Alignment.BottomCenter).padding(bottom = 120.dp).widthIn(max = 560.dp))
+        ErrorNote(error, Modifier.align(Alignment.BottomCenter).padding(bottom = 130.dp).widthIn(max = 560.dp))
 
         if (flash.value > 0f) {
             Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = flash.value)))
@@ -250,9 +256,10 @@ private fun BodyGuide(modifier: Modifier) {
         val cx = size.width / 2
         val stroke = Stroke(width = 4.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(20.dp.toPx(), 14.dp.toPx())))
         val head = h * 0.14f
-        drawOval(ZariLight, topLeft = Offset(cx - head * 0.42f, top), size = Size(head * 0.84f, head), style = stroke)
+        val guide = Color(0xFFF0D08A)
+        drawOval(guide, topLeft = Offset(cx - head * 0.42f, top), size = Size(head * 0.84f, head), style = stroke)
         drawRoundRect(
-            ZariLight,
+            guide,
             topLeft = Offset(cx - w / 2, top + head * 1.1f),
             size = Size(w, h - head * 1.1f),
             cornerRadius = CornerRadius(w * 0.32f, w * 0.32f),
@@ -276,11 +283,11 @@ private fun PickPhoto(vm: KioskViewModel, onBack: () -> Unit) {
         picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
     Column(
-        Modifier.fillMaxSize().padding(40.dp),
+        Modifier.fillMaxSize().padding(horizontal = 56.dp, vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(26.dp, Alignment.CenterVertically),
     ) {
-        Text("Choose a photo of them", fontFamily = Rozha, fontSize = 60.sp, lineHeight = 64.sp, color = OnMirror, textAlign = TextAlign.Center)
+        Text("Choose a photo of them", fontFamily = Rozha, fontSize = 60.sp, lineHeight = 66.sp, color = OnMirror, textAlign = TextAlign.Center)
         Muted(
             "A clear, well-lit photo where they're standing works best. A half-length photo works too.",
             align = TextAlign.Center, modifier = Modifier.widthIn(max = 620.dp),
@@ -300,27 +307,37 @@ private fun PickPhoto(vm: KioskViewModel, onBack: () -> Unit) {
 private fun Review(state: KioskState, onRetake: () -> Unit, onUse: () -> Unit) {
     val preview = state.photoPreview ?: return
     Box(Modifier.fillMaxSize().background(Mirror)) {
+        // the photo itself, blurred, fills the room behind the sharp one
         Image(
-            bitmap = preview.asImageBitmap(),
-            contentDescription = "Your photo",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().padding(top = 40.dp, bottom = 150.dp, start = 40.dp, end = 40.dp)
-                .clip(RoundedCornerShape(24.dp)),
+            bitmap = preview.asImageBitmap(), contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().then(if (android.os.Build.VERSION.SDK_INT >= 31) Modifier.blur(40.dp) else Modifier),
         )
+        Box(Modifier.fillMaxSize().background(mirrorPalette.scrim))
         Column(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 40.dp, vertical = 30.dp),
+            Modifier.fillMaxSize().padding(start = KioskSide, end = KioskSide, top = 30.dp, bottom = 30.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
+            Text(
+                if (state.mode == TryOnMode.GIFT) "Use this photo?" else "Happy with your photo?",
+                fontFamily = Rozha, fontSize = 44.sp, lineHeight = 50.sp, color = OnMirror, textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = ThemeSwitchRoom - KioskSide),
+            )
+            Image(
+                bitmap = preview.asImageBitmap(),
+                contentDescription = "Your photo",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.weight(1f).clip(RoundedCornerShape(28.dp)).border(1.dp, GlassLine, RoundedCornerShape(28.dp)),
+            )
             ErrorNote(state.error, Modifier.widthIn(max = 560.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 OutlineButton(if (state.mode == TryOnMode.GIFT) "Choose another" else "Retake", onRetake, enabled = !state.uploading)
                 GoldButton(
                     text = if (state.uploading) "Sending…" else "Use this photo",
                     onClick = onUse,
                     icon = Icons.Filled.CloudUpload,
                     enabled = !state.uploading,
-                    modifier = Modifier.widthIn(min = 280.dp),
+                    modifier = Modifier.widthIn(min = 300.dp),
                 )
                 if (state.uploading) CircularProgressIndicator(color = ZariLight)
             }

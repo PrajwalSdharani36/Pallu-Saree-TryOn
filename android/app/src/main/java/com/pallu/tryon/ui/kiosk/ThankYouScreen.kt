@@ -9,6 +9,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -26,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -51,10 +54,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pallu.tryon.ui.common.RemoteImage
 import com.pallu.tryon.ui.common.rupees
-import com.pallu.tryon.ui.theme.Arakku
+import com.pallu.tryon.ui.theme.Glass
+import com.pallu.tryon.ui.theme.GlassLine
+import com.pallu.tryon.ui.theme.GlassStrong
 import com.pallu.tryon.ui.theme.Kumkum
 import com.pallu.tryon.ui.theme.MirrorLine
-import com.pallu.tryon.ui.theme.MirrorRaised
 import com.pallu.tryon.ui.theme.OnMirror
 import com.pallu.tryon.ui.theme.OnMirrorMuted
 import com.pallu.tryon.ui.theme.PeacockDeep
@@ -77,20 +81,20 @@ fun ThankYouScreen(vm: KioskViewModel, onDone: () -> Unit) {
     }
     val ring by animateFloatAsState(seconds / RESET_SECONDS.toFloat(), tween(1000, easing = LinearEasing), label = "reset-ring")
 
-    KioskPage {
+    KioskPage(ambient = (state.shortlist.firstOrNull() ?: state.showcase.firstOrNull())?.imageUrl) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             // landscape tablets are short: smaller title and thumbnails so "Start over" stays on screen
             val short = maxHeight < 900.dp
-            val k = headlineSize(maxWidth) * (if (short) 0.72f else 1f)
-            val thumbW = if (short) 140.dp else 200.dp
+            val k = headlineSize(maxWidth) * (if (short) 0.75f else 1f)
+            val thumbW = if (short) 140.dp else 196.dp
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = 56.dp * k.coerceAtLeast(0.6f), vertical = 40.dp),
+                    .padding(horizontal = KioskSide, vertical = if (short) 30.dp else 60.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(if (short) 14.dp else 24.dp, Alignment.CenterVertically),
+                verticalArrangement = Arrangement.spacedBy(if (short) 18.dp else 30.dp, Alignment.CenterVertically),
             ) {
-                TempleMotif(Modifier.size(120.dp * k, 64.dp * k))
-                Text("Thank you", fontFamily = Rozha, fontSize = (96 * k).sp, lineHeight = (100 * k).sp, color = OnMirror)
+                TempleMotif(Modifier.size(110.dp * k, 58.dp * k))
+                Text("Thank you", fontFamily = Rozha, fontSize = (92 * k).sp, lineHeight = (98 * k).sp, color = OnMirror)
                 Text(
                     "Your selections have been saved.",
                     style = MaterialTheme.typography.headlineSmall.copy(fontSize = (28 * k).sp),
@@ -98,33 +102,30 @@ fun ThankYouScreen(vm: KioskViewModel, onDone: () -> Unit) {
                 )
 
                 if (state.shortlist.isNotEmpty()) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(22.dp))
-                            .background(MirrorRaised)
-                            .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(22.dp))
-                            .padding(if (short) 18.dp else 28.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(if (short) 12.dp else 20.dp),
-                    ) {
-                        Muted("Our staff have your shortlist and will bring these out for you", scale = 0.9f, align = TextAlign.Center)
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
-                            items(state.shortlist, key = { it.id }) { s ->
-                                Column(Modifier.width(thumbW), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Box {
-                                        RemoteImage(
-                                            s.imageUrl, s.name,
-                                            Modifier.size(thumbW, thumbW * 1.24f).clip(RoundedCornerShape(12.dp))
-                                                .border(2.dp, ZariLight, RoundedCornerShape(12.dp)),
+                    GlassPanel(Modifier.fillMaxWidth(), padding = PaddingValues(if (short) 22.dp else 32.dp)) {
+                        Column(
+                            Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(if (short) 14.dp else 24.dp),
+                        ) {
+                            Muted("Our staff have your shortlist and will bring these out for you", scale = 0.9f, align = TextAlign.Center)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(26.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
+                                items(state.shortlist, key = { it.id }) { s ->
+                                    Column(Modifier.width(thumbW), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Box {
+                                            RemoteImage(
+                                                s.imageUrl, s.name,
+                                                Modifier.size(thumbW, thumbW * 1.28f).clip(RoundedCornerShape(24.dp))
+                                                    .border(1.5.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(24.dp)),
+                                            )
+                                            Badge(Kumkum, Icons.Filled.Favorite, Modifier.align(Alignment.TopEnd).padding(12.dp), size = 36.dp, tint = Color.White)
+                                        }
+                                        Text(
+                                            s.name, fontFamily = Rozha, fontSize = 22.sp, lineHeight = 27.sp, color = OnMirror,
+                                            textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
                                         )
-                                        Badge(Kumkum, Icons.Filled.Favorite, Modifier.align(Alignment.TopEnd).padding(10.dp), size = 34.dp, tint = Color.White)
+                                        if (s.price > 0) Text(rupees(s.price), style = MaterialTheme.typography.bodyLarge, color = OnMirrorMuted)
                                     }
-                                    Text(
-                                        s.name, fontFamily = Rozha, fontSize = 21.sp, lineHeight = 25.sp, color = OnMirror,
-                                        textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                                    )
-                                    if (s.price > 0) Text(rupees(s.price), style = MaterialTheme.typography.bodyLarge, color = OnMirrorMuted)
                                 }
                             }
                         }
@@ -133,23 +134,27 @@ fun ThankYouScreen(vm: KioskViewModel, onDone: () -> Unit) {
                     Muted("Our staff can help you choose, or bring out more sarees to try.", align = TextAlign.Center)
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Badge(PeacockDeep, Icons.Filled.Check, size = 28.dp, tint = Color.White)
-                    Spacer(Modifier.width(12.dp))
+                Row(
+                    Modifier.clip(RoundedCornerShape(50)).background(Glass).padding(horizontal = 22.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Badge(PeacockDeep, Icons.Filled.Check, size = 30.dp, tint = Color.White)
+                    Spacer(Modifier.width(14.dp))
                     Text(
                         "Your photo and the looks have been deleted from this mirror.",
-                        style = MaterialTheme.typography.bodyLarge, color = OnMirrorMuted,
+                        style = MaterialTheme.typography.bodyLarge, color = OnMirror,
                     )
                 }
 
                 OutlinedButton(
                     onClick = onDone,
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, ZariLight),
-                    modifier = Modifier.widthIn(min = 260.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 28.dp, vertical = 16.dp),
+                    shape = RoundedCornerShape(50),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, GlassLine),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = GlassStrong),
+                    modifier = Modifier.widthIn(min = 280.dp).heightIn(min = 64.dp),
+                    contentPadding = PaddingValues(horizontal = 30.dp, vertical = 16.dp),
                 ) {
-                    Canvas(Modifier.size(28.dp)) {
+                    Canvas(Modifier.size(30.dp)) {
                         val stroke = 3.dp.toPx()
                         drawCircle(MirrorLine, style = Stroke(stroke))
                         drawArc(
@@ -178,7 +183,7 @@ private fun TempleMotif(modifier: Modifier) {
             drawPath(Path().apply { moveTo(x, h); lineTo(x + w / 2, top); lineTo(x + w, h); close() }, ZariLight)
             drawPath(Path().apply {
                 moveTo(x + w * 0.3f, h); lineTo(x + w / 2, top + (h - top) * 0.5f); lineTo(x + w * 0.7f, h); close()
-            }, Arakku)
+            }, Color(0xFFC0304A))
         }
     }
 }

@@ -30,49 +30,57 @@ val ZariGold = Color(0xFFD9AE55)    // fixed woven gold (staff screens, borders)
 val Line = Color(0xFFE3DCE6)
 
 /**
- * Mirror (kiosk) palette. Dark by default: a dim trial room, like the inside of a jewellery box.
- * A light "ivory silk" version can be chosen on the mirror; every kiosk colour below follows it.
+ * Mirror (kiosk) palette: "Silk Glass". The room takes the colour of the saree on screen (a
+ * blurred photo behind everything, see Ambient), with frosted glass panels on top. Dark by
+ * default; a light "day" version can be chosen on the mirror and every kiosk colour follows it.
  */
 @Immutable
 data class MirrorPalette(
     val light: Boolean,
-    val mirror: Color,
-    val raised: Color,
+    val mirror: Color,       // ground under the blurred saree
+    val scrim: Color,        // laid over the blurred saree so text always reads
+    val glass: Color,        // frosted panels
+    val glassStrong: Color,  // panels that sit on top of a photo
+    val glassLine: Color,
+    val raised: Color,       // opaque sheets (keypad, "Try more sarees")
     val raised2: Color,
     val deep: Color,
     val onMirror: Color,
     val muted: Color,
     val faint: Color,
     val line: Color,
-    val accent: Color,       // buttons, selected chips, highlights
-    val accentBright: Color, // rings and glows
+    val accent: Color,       // highlights, selected things, rings
+    val accentBright: Color,
     val onAccent: Color,
+    val primary: Color,      // the one main button on each screen
+    val onPrimary: Color,
     val heart: Color,
     val peacock: Color,
-    val borderGround: Color,
-    val borderBand: Color,
-    val borderGold: Color,
     val strong: Color,       // the brightest text: countdown digits, the current step
 )
 
 val DarkMirror = MirrorPalette(
     light = false,
-    mirror = Color(0xFF170F14), raised = Color(0xFF241820), raised2 = Color(0xFF31212B), deep = Color(0xFF0E090C),
-    onMirror = Color(0xFFF3E8E0), muted = Color(0xFFBBA8B3), faint = Color(0xFF9C8A95), line = Color(0xFF5A4450),
-    accent = Color(0xFFD9AE55), accentBright = Color(0xFFF1D48A), onAccent = Color(0xFF1E1218),
-    heart = Color(0xFFE0566B), peacock = Color(0xFF1B6E5A),
-    borderGround = Color(0xFF5C0F1F), borderBand = Color(0xFF8E1B2E), borderGold = Color(0xFFD9AE55),
-    strong = Color(0xFFFFF6E6),
+    mirror = Color(0xFF120D12), scrim = Color(0x8C120D12),
+    glass = Color(0x1FFFFFFF), glassStrong = Color(0xB8150F15), glassLine = Color(0x33FFFFFF),
+    raised = Color(0xFF221820), raised2 = Color(0xFF30242C), deep = Color(0xFF0B080B),
+    onMirror = Color(0xFFFBF6F1), muted = Color(0xFFE0D6DA), faint = Color(0xFFC2B6BC), line = Color(0x40FFFFFF),
+    accent = Color(0xFFF0D08A), accentBright = Color(0xFFFFE2A8), onAccent = Color(0xFF1A1216),
+    primary = Color(0xFFFFFFFF), onPrimary = Color(0xFF1A1216),
+    heart = Color(0xFFD93A55), peacock = Color(0xFF2E8B72),
+    strong = Color(0xFFFFFFFF),
 )
 
 val LightMirror = MirrorPalette(
     light = true,
-    mirror = Color(0xFFFBF6F0), raised = Color(0xFFFFFCF8), raised2 = Color(0xFFF1E7DD), deep = Color(0xFFF3EAE0),
-    onMirror = Color(0xFF2E1D25), muted = Color(0xFF6B5862), faint = Color(0xFF75626C), line = Color(0xFFDCCDBF),
-    accent = Color(0xFF8E1B2E), accentBright = Color(0xFFB8892E), onAccent = Color(0xFFFFF8F2),
+    mirror = Color(0xFFFAF5EF), scrim = Color(0xBFFAF5EF),
+    glass = Color(0xA6FFFFFF), glassStrong = Color(0xE6FFFDFA), glassLine = Color(0x262A1A20),
+    raised = Color(0xFFFFFDF9), raised2 = Color(0xFFF2E9E0), deep = Color(0xFFEFE5DA),
+    onMirror = Color(0xFF2A1A20), muted = Color(0xFF5B4750), faint = Color(0xFF6E5B64), line = Color(0x332A1A20),
+    accent = Color(0xFF7A1E2C), accentBright = Color(0xFFB8892E), onAccent = Color(0xFFFFFFFF),
+    primary = Color(0xFF7A1E2C), onPrimary = Color(0xFFFFFFFF),
     heart = Color(0xFFC23B55), peacock = Color(0xFF2F6B5E),
-    borderGround = Color(0xFFF3E6D6), borderBand = Color(0xFFA33A4C), borderGold = Color(0xFFC69C45),
-    strong = Color(0xFF2E1D25),
+    strong = Color(0xFF2A1A20),
 )
 
 /** The mirror's current palette; the kiosk's light/dark switch sets it (saved per device). */
@@ -93,32 +101,57 @@ val OnGold: Color get() = mirrorPalette.onAccent
 val Kumkum: Color get() = mirrorPalette.heart
 val PeacockDeep: Color get() = mirrorPalette.peacock
 val MirrorStrong: Color get() = mirrorPalette.strong
+val Glass: Color get() = mirrorPalette.glass
+val GlassStrong: Color get() = mirrorPalette.glassStrong
+val GlassLine: Color get() = mirrorPalette.glassLine
+val Primary: Color get() = mirrorPalette.primary
+val OnPrimary: Color get() = mirrorPalette.onPrimary
 val TempleRed = Color(0xFF5C0F1F)
 val Danger = Color(0xFFA3122A)
 
 /** Display face: Fraunces with its "soft" rounded serifs, so big headings read gently, not sharp. */
 val Rozha = FontFamily(Font(R.font.fraunces_soft_semibold, FontWeight.Normal), Font(R.font.fraunces_soft_semibold, FontWeight.SemiBold))
-val Mukta = FontFamily(
-    Font(R.font.mukta_regular, FontWeight.Normal),
-    Font(R.font.mukta_medium, FontWeight.Medium),
-    Font(R.font.mukta_bold, FontWeight.Bold),
+/** Body face: Manrope, open and very legible at a distance. */
+val Sans = FontFamily(
+    Font(R.font.manrope_400, FontWeight.Normal),
+    Font(R.font.manrope_500, FontWeight.Medium),
+    Font(R.font.manrope_600, FontWeight.SemiBold),
+    Font(R.font.manrope_700, FontWeight.Bold),
 )
 
 private val PalluType = Typography(
     displayLarge = TextStyle(fontFamily = Rozha, fontSize = 52.sp, lineHeight = 58.sp),
     displayMedium = TextStyle(fontFamily = Rozha, fontSize = 40.sp, lineHeight = 46.sp),
     headlineLarge = TextStyle(fontFamily = Rozha, fontSize = 32.sp, lineHeight = 38.sp),
-    headlineMedium = TextStyle(fontFamily = Rozha, fontSize = 26.sp, lineHeight = 32.sp),
-    headlineSmall = TextStyle(fontFamily = Rozha, fontSize = 22.sp, lineHeight = 28.sp),
-    titleLarge = TextStyle(fontFamily = Mukta, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
-    titleMedium = TextStyle(fontFamily = Mukta, fontWeight = FontWeight.Bold, fontSize = 17.sp, lineHeight = 23.sp),
-    titleSmall = TextStyle(fontFamily = Mukta, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 20.sp),
-    bodyLarge = TextStyle(fontFamily = Mukta, fontSize = 17.sp, lineHeight = 26.sp),
-    bodyMedium = TextStyle(fontFamily = Mukta, fontSize = 15.sp, lineHeight = 22.sp),
-    bodySmall = TextStyle(fontFamily = Mukta, fontSize = 13.sp, lineHeight = 18.sp),
-    labelLarge = TextStyle(fontFamily = Mukta, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 20.sp),
-    labelMedium = TextStyle(fontFamily = Mukta, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 18.sp),
-    labelSmall = TextStyle(fontFamily = Mukta, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+    headlineMedium = TextStyle(fontFamily = Rozha, fontSize = 27.sp, lineHeight = 33.sp),
+    headlineSmall = TextStyle(fontFamily = Rozha, fontSize = 23.sp, lineHeight = 29.sp),
+    titleLarge = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
+    titleMedium = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 24.sp),
+    titleSmall = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 21.sp),
+    bodyLarge = TextStyle(fontFamily = Sans, fontSize = 17.sp, lineHeight = 26.sp),
+    bodyMedium = TextStyle(fontFamily = Sans, fontSize = 15.sp, lineHeight = 23.sp),
+    bodySmall = TextStyle(fontFamily = Sans, fontSize = 13.sp, lineHeight = 19.sp),
+    labelLarge = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 16.sp, lineHeight = 20.sp),
+    labelMedium = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp),
+    labelSmall = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp),
+)
+
+/** The mirror is read from a step or two away, often by customers who don't use apps much: bigger everything. */
+private val MirrorType = Typography(
+    displayLarge = TextStyle(fontFamily = Rozha, fontSize = 64.sp, lineHeight = 70.sp),
+    displayMedium = TextStyle(fontFamily = Rozha, fontSize = 48.sp, lineHeight = 54.sp),
+    headlineLarge = TextStyle(fontFamily = Rozha, fontSize = 38.sp, lineHeight = 44.sp),
+    headlineMedium = TextStyle(fontFamily = Rozha, fontSize = 32.sp, lineHeight = 38.sp),
+    headlineSmall = TextStyle(fontFamily = Rozha, fontSize = 27.sp, lineHeight = 33.sp),
+    titleLarge = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 28.sp),
+    titleMedium = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 26.sp),
+    titleSmall = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 23.sp),
+    bodyLarge = TextStyle(fontFamily = Sans, fontSize = 20.sp, lineHeight = 30.sp),
+    bodyMedium = TextStyle(fontFamily = Sans, fontSize = 18.sp, lineHeight = 27.sp),
+    bodySmall = TextStyle(fontFamily = Sans, fontSize = 16.sp, lineHeight = 23.sp),
+    labelLarge = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 22.sp),
+    labelMedium = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 20.sp),
+    labelSmall = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 18.sp),
 )
 
 private val StoreColors = lightColorScheme(
@@ -145,7 +178,7 @@ private val StoreColors = lightColorScheme(
 private fun mirrorColors(p: MirrorPalette) = if (p.light) {
     lightColorScheme(
         primary = p.accent, onPrimary = p.onAccent,
-        primaryContainer = Color(0xFFFFF4EE), onPrimaryContainer = p.onMirror,
+        primaryContainer = Color(0xFFF7E6E8), onPrimaryContainer = p.onMirror,
         secondary = p.peacock, onSecondary = Color.White,
         tertiary = p.heart, onTertiary = Color.White,
         background = p.mirror, onBackground = p.onMirror,
@@ -157,14 +190,14 @@ private fun mirrorColors(p: MirrorPalette) = if (p.light) {
 } else {
     darkColorScheme(
         primary = p.accent, onPrimary = p.onAccent,
-        primaryContainer = Color(0xFF3A1F2A), onPrimaryContainer = p.onMirror,
+        primaryContainer = Color(0xFF3A2A2E), onPrimaryContainer = p.onMirror,
         secondary = Color(0xFF5FC2C6), onSecondary = Color(0xFF032426),
         tertiary = p.heart, onTertiary = Color.White,
         background = p.mirror, onBackground = p.onMirror,
         surface = p.raised, onSurface = p.onMirror,
         surfaceVariant = p.raised2, onSurfaceVariant = p.muted,
-        outline = p.line, outlineVariant = Color(0xFF3A2A33),
-        error = Color(0xFFFF7A8C),
+        outline = p.line, outlineVariant = Color(0x26FFFFFF),
+        error = Color(0xFFFF8A9A),
     )
 }
 
@@ -174,8 +207,8 @@ fun PalluTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = StoreColors, typography = PalluType, content = content)
 }
 
-/** Kiosk screens: a dim trial room so the try-on photos glow. */
+/** Kiosk screens: Silk Glass, with large type for reading from a step away. */
 @Composable
 fun MirrorTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = mirrorColors(mirrorPalette), typography = PalluType, content = content)
+    MaterialTheme(colorScheme = mirrorColors(mirrorPalette), typography = MirrorType, content = content)
 }

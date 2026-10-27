@@ -37,10 +37,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.pallu.tryon.ui.theme.Mirror
-import com.pallu.tryon.ui.theme.MirrorLine
-import com.pallu.tryon.ui.theme.MirrorRaised
+import com.pallu.tryon.ui.theme.GlassLine
+import com.pallu.tryon.ui.theme.GlassStrong
+import com.pallu.tryon.ui.theme.OnMirror
 import com.pallu.tryon.ui.theme.MirrorTheme
-import com.pallu.tryon.ui.theme.ZariLight
 import kotlinx.coroutines.delay
 
 /**
@@ -98,7 +98,8 @@ fun KioskFrame(
             Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout))) {
                 content()
                 if (onToggleLight != null) {
-                    ThemeSwitch(light, onToggleLight, Modifier.align(Alignment.TopEnd).padding(top = 2.dp, end = 12.dp))
+                    // lines up with KioskTopBar, which keeps ThemeSwitchRoom free on the right
+                    ThemeSwitch(light, onToggleLight, Modifier.align(Alignment.TopEnd).padding(top = 34.dp, end = KioskSide))
                 }
             }
         }
@@ -140,18 +141,18 @@ fun SystemBars(kiosk: Boolean, light: Boolean) {
 private fun ThemeSwitch(light: Boolean, onToggle: () -> Unit, modifier: Modifier) {
     Box(
         modifier
-            .size(44.dp)
+            .size(56.dp)
             .clip(CircleShape)
-            .background(MirrorRaised.copy(alpha = 0.92f))
-            .border(1.dp, MirrorLine, CircleShape)
+            .background(GlassStrong)
+            .border(1.dp, GlassLine, CircleShape)
             .clickable(onClickLabel = if (light) "Switch to dark" else "Switch to light", onClick = onToggle),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             if (light) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
             contentDescription = if (light) "Dark theme" else "Light theme",
-            tint = ZariLight,
-            modifier = Modifier.size(22.dp),
+            tint = OnMirror,
+            modifier = Modifier.size(26.dp),
         )
     }
 }

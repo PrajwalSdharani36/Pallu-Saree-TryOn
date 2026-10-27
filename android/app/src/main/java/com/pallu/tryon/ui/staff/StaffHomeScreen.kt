@@ -62,12 +62,12 @@ fun StaffHomeScreen(
         ) {
             LazyColumn(
                 Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 22.dp, vertical = 26.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
-                    Column(Modifier.widthIn(max = 640.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(Modifier.widthIn(max = 640.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                         Text(
                             "When a customer has picked their sarees, scan the tags and hand them the QR code for the mirror.",
                             style = MaterialTheme.typography.bodyLarge,
@@ -78,7 +78,7 @@ fun StaffHomeScreen(
                         Text(
                             "Today's customers",
                             style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.padding(top = 16.dp),
+                            modifier = Modifier.padding(top = 18.dp),
                         )
                         if (state.recent.isEmpty() && !state.loadingRecent) {
                             Text(
@@ -100,11 +100,11 @@ fun StaffHomeScreen(
 @Composable
 private fun SessionRow(s: TryOnSession, onClick: () -> Unit) {
     val favs = s.items.filter { it.favorite }
-    Surface(onClick = onClick, shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp,
+    Surface(onClick = onClick, shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
-        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(s.code, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 14.dp))
-            Column(Modifier.weight(1f)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(s.code, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 18.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     listOf(s.customerLabel.ifBlank { null }, if (s.mode == "gift") "gift" else null)
                         .filterNotNull().joinToString(", ").ifBlank { "Customer" },
@@ -136,7 +136,7 @@ private fun SessionRow(s: TryOnSession, onClick: () -> Unit) {
 private fun EngineNote(note: com.pallu.tryon.data.EngineStatus) {
     val problem = note.state == "error" || note.state == "warning"
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (problem) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -144,7 +144,7 @@ private fun EngineNote(note: com.pallu.tryon.data.EngineStatus) {
             note.message,
             style = MaterialTheme.typography.bodyMedium,
             color = if (problem) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
         )
     }
 }

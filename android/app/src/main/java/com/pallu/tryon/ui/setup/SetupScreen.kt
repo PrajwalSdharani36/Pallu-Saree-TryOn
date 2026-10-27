@@ -69,10 +69,10 @@ fun SetupScreen(container: AppContainer, initial: AppSettings, onDone: (AppMode)
                 .verticalScroll(rememberScrollState())
                 .imePadding()
                 .navigationBarsPadding()
-                .padding(20.dp),
+                .padding(horizontal = 22.dp, vertical = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(Modifier.widthIn(max = 560.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.widthIn(max = 560.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 OutlinedTextField(
                     value = url, onValueChange = { url = it; connectedStore = null },
                     label = { Text("Server address") },

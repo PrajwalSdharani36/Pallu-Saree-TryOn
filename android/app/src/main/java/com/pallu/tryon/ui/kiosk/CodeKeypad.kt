@@ -32,11 +32,15 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pallu.tryon.ui.theme.GlassLine
+import com.pallu.tryon.ui.theme.GlassStrong
 import com.pallu.tryon.ui.theme.Mirror
+import com.pallu.tryon.ui.theme.Sans
 import com.pallu.tryon.ui.theme.MirrorLine
 import com.pallu.tryon.ui.theme.MirrorRaised
 import com.pallu.tryon.ui.theme.MirrorRaised2
@@ -75,10 +79,10 @@ private fun CodeCells(value: String, boxSize: Dp, active: Boolean) {
         val current = i == value.length || (active && i == 5 && value.length == 6)
         Box(
             Modifier
-                .size(boxSize, boxSize * 1.3f)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Mirror)
-                .border(if (current) 2.dp else 1.dp, if (current) ZariLight else MirrorLine, RoundedCornerShape(10.dp)),
+                .size(boxSize, boxSize * 1.25f)
+                .clip(RoundedCornerShape(14.dp))
+                .background(GlassStrong)
+                .border(if (current) 2.5.dp else 1.dp, if (current) ZariLight else GlassLine, RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Text(ch, fontFamily = Rozha, fontSize = (boxSize.value * 0.56f).sp, color = OnMirror)
@@ -115,9 +119,9 @@ fun CodeKeypad(
                 Modifier
                     .widthIn(max = 880.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                     .background(MirrorRaised)
-                    .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .border(1.dp, ZariLight.copy(alpha = 0.3f), RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
                     // swallow taps so they don't reach the scrim
                     .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
                     .padding(horizontal = if (wide) 40.dp else 24.dp, vertical = if (short) 18.dp else 28.dp),
@@ -178,7 +182,10 @@ private fun Key(label: String, height: Dp, modifier: Modifier, enabled: Boolean,
             .then(if (faded) Modifier.clearAndSetSemantics {} else Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, fontFamily = Rozha, fontSize = (height.value * 0.42f).sp, color = if (enabled || faded) OnMirror else OnMirror.copy(alpha = 0.4f))
+        Text(
+            label, fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = (height.value * 0.4f).sp,
+            color = if (enabled || faded) OnMirror else OnMirror.copy(alpha = 0.4f),
+        )
     }
 }
 

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pallu Store Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;700&family=Rozha+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,600,100&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --silk:#F5F2F7; --paper:#FFFFFF; --ink:#24121A; --muted:#6E5A66;
   --arakku:#8E1B2E; --arakku-deep:#6B1222; --peacock:#0E5E63; --zari:#B8892E;
   --line:#E3DCE6; --ok:#2F6B3A; --warn:#9A5B00; --bad:#A3122A;
-  --radius-sm:6px; --radius-lg:14px;
+  --radius-sm:10px; --radius-lg:18px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -27,10 +27,10 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--silk);color:var(--ink);font:400 16px/1.55 "Mukta",system-ui,sans-serif}
-h1,h2{font-family:"Rozha One",Georgia,serif;font-weight:400;letter-spacing:.005em;margin:0}
+body{background:var(--silk);color:var(--ink);font:400 16px/1.6 "Manrope",system-ui,sans-serif}
+h1,h2{font-family:"Fraunces",Georgia,serif;font-variation-settings:"SOFT" 100;font-weight:600;letter-spacing:0;margin:0}
 h1{font-size:2rem;line-height:1.1}
-h2{font-size:1.45rem;line-height:1.2;margin-bottom:.75rem}
+h2{font-size:1.45rem;line-height:1.25;margin-bottom:1rem}
 button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--peacock);outline-offset:2px}
 
@@ -44,72 +44,72 @@ button,input,textarea,select{font:inherit;color:inherit}
     var(--arakku-deep);
 }
 header{background:var(--arakku-deep);color:#FBEFF1}
-.bar{max-width:1240px;margin:0 auto;padding:18px 20px 14px;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+.bar{max-width:1240px;margin:0 auto;padding:22px 24px 18px;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
 .bar h1{color:#FBEFF1}
 .bar .store{color:#F0C9A0;font-size:1rem}
 .bar .spacer{flex:1}
-.bar button{background:transparent;border:1px solid #F0C9A066;color:#FBEFF1;border-radius:var(--radius-sm);padding:4px 12px;cursor:pointer}
+.bar button{background:transparent;border:1px solid #F0C9A066;color:#FBEFF1;border-radius:var(--radius-sm);padding:8px 16px;cursor:pointer}
 
-main{max-width:1240px;margin:0 auto;padding:24px 20px 64px}
-.today{font-size:1.2rem;max-width:62ch;margin:0 0 28px}
+main{max-width:1240px;margin:0 auto;padding:36px 24px 80px}
+.today{font-size:1.2rem;max-width:62ch;margin:0 0 36px}
 .today b{color:var(--arakku);font-weight:700}
 .today .engine{display:block;font-size:.9rem;color:var(--muted);margin-top:4px}
 .today .engine::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background:var(--muted);vertical-align:middle}
 .today .engine.ok::before{background:var(--ok)} .today .engine.warning::before{background:var(--warn)}
 .today .engine.error{color:var(--bad)} .today .engine.error::before{background:var(--bad)}
 
-.layout{display:grid;grid-template-columns:340px 1fr;gap:32px;align-items:start}
+.layout{display:grid;grid-template-columns:360px 1fr;gap:40px;align-items:start}
 @media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.add{position:static}}
 .layout>*{min-width:0}
 
-.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);padding:20px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);padding:28px}
 .add{position:sticky;top:16px}
-label{display:block;font-weight:500;margin:12px 0 4px}
+label{display:block;font-weight:600;margin:18px 0 6px}
 .hint{font-size:.88rem;color:var(--muted);margin:2px 0 0}
 input[type=text],input[type=number],input[type=password],textarea{
-  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--silk)}
+  width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--silk)}
 textarea{min-height:64px;resize:vertical}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .drop{margin-top:4px;border:2px dashed var(--line);border-radius:var(--radius-lg);aspect-ratio:4/3;display:grid;place-items:center;
   text-align:center;color:var(--muted);cursor:pointer;overflow:hidden;position:relative;background:var(--silk)}
 .drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.primary{margin-top:18px;width:100%;padding:11px;border:0;border-radius:var(--radius-sm);background:var(--arakku);color:#fff;font-weight:700;cursor:pointer}
+.primary{margin-top:24px;width:100%;padding:14px;border:0;border-radius:var(--radius-sm);background:var(--arakku);color:#fff;font-weight:700;cursor:pointer}
 .primary:disabled{opacity:.55;cursor:progress}
 .msg{min-height:1.4em;margin:10px 0 0;font-size:.95rem}
 .msg.err{color:var(--bad)} .msg.ok{color:var(--ok)}
 
-.cat-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.cat-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
 .cat-head h2{margin:0}
 .cat-head input{max-width:280px;margin-left:auto}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(190px,42vw),1fr));gap:18px}
-.saree{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;display:flex;flex-direction:column}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,42vw),1fr));gap:24px}
+.saree{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column}
 .saree .ph{aspect-ratio:3/4;background:var(--line);position:relative}
 .saree .ph img{width:100%;height:100%;object-fit:cover;display:block}
 .saree .ph::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;
   background:repeating-linear-gradient(90deg,var(--zari) 0 6px,transparent 6px 10px)}
-.saree .body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px;flex:1}
+.saree .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
 .saree .name{font-weight:700;line-height:1.25}
 .saree .meta{color:var(--muted);font-size:.9rem}
 .saree .price{color:var(--arakku);font-weight:700}
-.saree .acts{display:flex;gap:6px;margin-top:auto;padding-top:8px}
-.saree .acts a,.saree .acts button{flex:1;text-align:center;font-size:.85rem;padding:5px 4px;border:1px solid var(--line);
+.saree .acts{display:flex;gap:8px;margin-top:auto;padding-top:12px}
+.saree .acts a,.saree .acts button{flex:1;text-align:center;font-size:.88rem;padding:8px 6px;border:1px solid var(--line);
   border-radius:var(--radius-sm);background:transparent;cursor:pointer;color:var(--ink);text-decoration:none}
 .saree .acts button.rm:hover{border-color:var(--bad);color:var(--bad)}
 .tag{font-size:.82rem}
 .tag.pending{color:var(--warn)} .tag.done{color:var(--ok)} .tag.failed{color:var(--bad)}
 .empty{padding:32px;text-align:center;color:var(--muted);border:2px dashed var(--line);border-radius:var(--radius-lg)}
 
-.sessions{margin-top:40px}
+.sessions{margin-top:56px}
 table{width:100%;border-collapse:collapse;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th,td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-weight:500;color:var(--muted);font-size:.9rem}
-td.code{font-family:"Rozha One",serif;font-size:1.1rem;letter-spacing:.06em}
+td.code{font-family:"Fraunces",serif;font-weight:600;font-size:1.1rem;letter-spacing:.06em}
 .fav{color:var(--arakku)}
 .table-wrap{overflow-x:auto}
 
 .login{max-width:420px;margin:12vh auto 0;padding:0 20px}
-.login .panel{padding:28px}
+.login .panel{padding:34px}
 .login p{color:var(--muted)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

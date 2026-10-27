@@ -109,8 +109,8 @@ fun SessionScreen(
         )
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (s == null) {
@@ -120,11 +120,11 @@ fun SessionScreen(
                 item {
                     Surface(
                         modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(22.dp),
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
-                        Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(Modifier.padding(26.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             if (s.isClosed) {
                                 Text(
                                     if (s.status == "closed") "This customer has finished. Their photo and looks are deleted."
@@ -140,7 +140,7 @@ fun SessionScreen(
                     }
                 }
                 item {
-                    Row(Modifier.widthIn(max = 520.dp).fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                    Row(Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.Bottom) {
                         Text("Looks", fontFamily = Rozha, fontSize = 22.sp, modifier = Modifier.weight(1f))
                         val liked = s.items.count { it.favorite }
                         Text(
@@ -168,14 +168,14 @@ fun SessionScreen(
             }
         }
         Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (s != null && !s.isClosed) {
                 OutlinedButton(
                     onClick = onScanMore,
-                    modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 60.dp),
+                    shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 ) { Text("Scan more", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
             }
@@ -198,11 +198,11 @@ fun SessionScreen(
 private fun GiftPhotoCard(waiting: Boolean, onPick: () -> Unit, modifier: Modifier) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(18.dp),
         color = if (waiting) Color(0xFFFBF3DF) else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (waiting) Zari else MaterialTheme.colorScheme.outline),
     ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.CardGiftcard, contentDescription = null, tint = Arakku, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -313,13 +313,13 @@ private fun Progress(s: TryOnSession, modifier: Modifier) {
 private fun ItemRow(item: SessionItem, modifier: Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (item.favorite) Color(0xFFE9A9B5) else MaterialTheme.colorScheme.outline),
     ) {
-        Row(Modifier.padding(start = 7.dp, end = 12.dp, top = 7.dp, bottom = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-            RemoteImage(item.saree.imageUrl, item.saree.name, Modifier.size(42.dp, 52.dp).clip(RoundedCornerShape(6.dp)))
-            Spacer(Modifier.width(12.dp))
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            RemoteImage(item.saree.imageUrl, item.saree.name, Modifier.size(48.dp, 60.dp).clip(RoundedCornerShape(10.dp)))
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(item.saree.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(

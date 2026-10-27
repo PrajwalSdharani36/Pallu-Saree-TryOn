@@ -96,7 +96,7 @@ class MirrorWalkthroughTest {
         configure(AppMode.KIOSK)
         val s = newSession("Meera", "DEMO001", "DEMO002", "DEMO004", "DEMO006")
         launch()
-        find(By.textContains("Hold up the QR code"), 20_000)
+        find(By.textContains("Show the QR code"), 20_000)
         shot("01_welcome", settle = 3500)
 
         // tapping the code boxes opens the mirror's own keypad
@@ -143,10 +143,7 @@ class MirrorWalkthroughTest {
         shot("12_next_look")
         holdToCompare("13_compare_original")
 
-        // same saree, another drape: a new look appears right next to it
-        tapText("Change") // the look card redraws as the list updates
-        find(By.text("Try another drape"))
-        shot("13b_drape_sheet", settle = 800)
+        // same saree, another drape: one tap on the drape row makes a new look right next to it
         tapText("Bengali")
         find(By.text("Bengali drape"), 20_000)
         shot("13c_new_drape", settle = 1500)
@@ -169,14 +166,14 @@ class MirrorWalkthroughTest {
         find(By.text("Thank you"), 20_000)
         shot("14_thank_you", settle = 2500)
         find(By.textStartsWith("Start over")).click()
-        find(By.textContains("Hold up the QR code"), 20_000)
+        find(By.textContains("Show the QR code"), 20_000)
     }
 
     private fun giftVisit() {
         configure(AppMode.KIOSK)
         val s = newSession("Token 12", "DEMO003", "DEMO005")
         launch()
-        find(By.textContains("Hold up the QR code"), 20_000)
+        find(By.textContains("Show the QR code"), 20_000)
         typeCode(s.code)
         tapLast("Start")
         find(By.textContains("Send our staff a photo")).click()
@@ -377,7 +374,8 @@ class MirrorWalkthroughTest {
     private fun swipePager() {
         val w = device.displayWidth
         val h = device.displayHeight
-        device.swipe((w * 0.8).toInt(), h / 2, (w * 0.2).toInt(), h / 2, 25)
+        // left part of the screen: in landscape the right side is the look's panel, not the gallery
+        device.swipe((w * 0.55).toInt(), (h * 0.42).toInt(), (w * 0.1).toInt(), (h * 0.42).toInt(), 25)
         SystemClock.sleep(1200)
     }
 

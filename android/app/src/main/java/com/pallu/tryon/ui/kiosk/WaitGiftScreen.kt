@@ -1,9 +1,12 @@
 package com.pallu.tryon.ui.kiosk
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -25,9 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pallu.tryon.ui.common.ErrorNote
 import com.pallu.tryon.ui.common.RemoteImage
+import com.pallu.tryon.ui.theme.GlassLine
+import com.pallu.tryon.ui.theme.GlassStrong
 import com.pallu.tryon.ui.theme.OnMirror
 import com.pallu.tryon.ui.theme.Rozha
-import com.pallu.tryon.ui.theme.ZariLight
 
 /**
  * Gift mode on the mirror. The person the saree is for isn't here, and their photo is on the
@@ -47,42 +52,53 @@ fun WaitGiftScreen(
         onDispose { }
     }
 
-    KioskPage {
+    KioskPage(ambient = state.session?.items?.firstOrNull()?.saree?.imageUrl) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
-            Column(
+            Box(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = 56.dp * k.coerceAtLeast(0.6f), vertical = 40.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(26.dp, Alignment.CenterVertically),
+                    .padding(horizontal = KioskSide, vertical = 110.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                DrapingLoom(Modifier.size(200.dp))
-                Text(
-                    "Send their photo to our staff",
-                    fontFamily = Rozha, fontSize = (60 * k).sp, lineHeight = (66 * k).sp,
-                    color = OnMirror, textAlign = TextAlign.Center,
-                )
-                Muted(
-                    "WhatsApp a clear photo of them to the staff member who helped you. " +
-                        "It appears here automatically and their looks start straight away.",
-                    scale = k, align = TextAlign.Center, modifier = Modifier.widthIn(max = 640.dp),
-                )
-                state.session?.let { s ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        s.items.take(6).forEach { item ->
-                            RemoteImage(
-                                item.saree.imageUrl, item.saree.name,
-                                Modifier.size(84.dp, 106.dp).clip(RoundedCornerShape(8.dp))
-                                    .border(1.dp, ZariLight.copy(alpha = 0.35f), RoundedCornerShape(8.dp)),
+                GlassPanel(Modifier.widthIn(max = 720.dp), padding = PaddingValues(horizontal = 40.dp, vertical = 44.dp)) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(28.dp),
+                    ) {
+                        DrapingLoom(Modifier.size(180.dp))
+                        Text(
+                            "Send their photo to our staff",
+                            fontFamily = Rozha, fontSize = (54 * k).sp, lineHeight = (60 * k).sp,
+                            color = OnMirror, textAlign = TextAlign.Center,
+                        )
+                        Muted(
+                            "WhatsApp a clear photo of them to the staff member who helped you. " +
+                                "It appears here by itself and their looks start straight away.",
+                            scale = k * 0.95f, align = TextAlign.Center,
+                        )
+                        state.session?.let { s ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                s.items.take(5).forEach { item ->
+                                    RemoteImage(
+                                        item.saree.imageUrl, item.saree.name,
+                                        Modifier.size(84.dp, 108.dp).clip(RoundedCornerShape(16.dp))
+                                            .border(1.dp, GlassLine, RoundedCornerShape(16.dp)),
+                                    )
+                                }
+                            }
+                            Text(
+                                "Your code is ${s.code}",
+                                style = MaterialTheme.typography.titleMedium, color = OnMirror,
+                                modifier = Modifier.clip(RoundedCornerShape(50)).background(GlassStrong)
+                                    .padding(horizontal = 22.dp, vertical = 10.dp),
                             )
                         }
+                        ErrorNote(state.error)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlineButton("Choose a photo on this screen instead", { vm.stopWaiting(); onUseThisDevice() })
+                            QuietButton("Cancel") { vm.stopWaiting(); onCancel() }
+                        }
                     }
-                    Muted("Your code is ${s.code}", scale = 0.8f)
-                }
-                ErrorNote(state.error, Modifier.widthIn(max = 560.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    QuietButton("Cancel") { vm.stopWaiting(); onCancel() }
-                    OutlineButton("Choose a photo on this screen instead", { vm.stopWaiting(); onUseThisDevice() })
                 }
             }
         }

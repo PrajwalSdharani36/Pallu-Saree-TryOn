@@ -172,8 +172,8 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
 
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (!adding) {
                 item {
@@ -240,7 +240,7 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
         }
 
         Surface(shadowElevation = 8.dp) {
-            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
+            Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 18.dp)) {
                 if (adding) {
                     BigButton("Done adding", onClick = { state.addingTo?.let(onSessionReady) }, modifier = Modifier.fillMaxWidth())
                 } else {
@@ -303,13 +303,13 @@ private fun ToastChip(text: String, icon: ImageVector, color: Color) {
 private fun ScannedRow(s: Saree, highlight: Boolean, onRemove: (() -> Unit)?, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (highlight) Color(0xFFFBF3DF) else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (highlight) ZariGold else MaterialTheme.colorScheme.outline),
     ) {
-        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            RemoteImage(s.imageUrl, s.name, Modifier.size(48.dp, 60.dp).clip(RoundedCornerShape(7.dp)))
-            Spacer(Modifier.width(12.dp))
+        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            RemoteImage(s.imageUrl, s.name, Modifier.size(52.dp, 66.dp).clip(RoundedCornerShape(10.dp)))
+            Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(s.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
