@@ -50,6 +50,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,7 +96,10 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
     val state by vm.state.collectAsStateWithLifecycle()
     val session = state.session ?: return
     val items = session.items
-    val pager = rememberPagerState(pageCount = { items.size })
+    // The pager keeps these lambdas between recompositions, so they must read the LATEST list:
+    // a look added by a new drape, "Try more sarees" or the staff phone grows it under them.
+    val latest = rememberUpdatedState(items)
+    val pager = rememberPagerState(pageCount = { latest.value.size })
     val scope = rememberCoroutineScope()
     var showOriginal by remember { mutableStateOf(false) }
     val strip = rememberLazyListState()
@@ -152,9 +156,9 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = peek, vertical = 6.dp),
                     pageSpacing = 18.dp,
-                    key = { items[it].id },
+                    key = { latest.value.getOrNull(it)?.id ?: "page-$it" },
                 ) { page ->
-                    val item = items[page]
+                    val item = latest.value.getOrNull(page) ?: return@HorizontalPager
                     val offset = ((pager.currentPage - page) + pager.currentPageOffsetFraction).absoluteValue.coerceIn(0f, 1f)
                     LookCard(
                         item = item,

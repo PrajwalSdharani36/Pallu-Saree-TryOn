@@ -143,17 +143,17 @@ class MirrorWalkthroughTest {
         holdToCompare("13_compare_original")
 
         // same saree, another drape: a new look appears right next to it
-        find(By.text("Change")).click()
+        clickRetry(By.text("Change")) // the look card redraws as the list updates
         find(By.text("Try another drape"))
         shot("13b_drape_sheet", settle = 800)
-        find(By.text("Bengali")).click()
+        clickRetry(By.text("Bengali"))
         find(By.text("Bengali drape"), 20_000)
         shot("13c_new_drape", settle = 1500)
 
         // one more saree from the collection, with the same photo
-        find(By.text("Try more sarees")).click()
+        clickRetry(By.text("Try more sarees"))
         find(By.textContains("Pick from our collection"), 15_000)
-        find(By.text("Ivory Kasavu, Kerala"), 15_000).click()
+        clickRetry(By.text("Ivory Kasavu, Kerala"))
         shot("13d_try_more", settle = 1500)
         find(By.text("Try this saree")).click()
         find(By.textStartsWith("All 6 are ready"), 120_000)
@@ -161,7 +161,7 @@ class MirrorWalkthroughTest {
         tapShortlist()
 
         // finishing asks first, because it deletes the photo
-        find(By.text("I'm done")).click()
+        clickRetry(By.text("I'm done"))
         find(By.text("All done?"))
         shot("13f_done_check", settle = 800)
         find(By.text("Yes, I'm done")).click()
