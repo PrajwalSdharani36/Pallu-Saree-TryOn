@@ -98,32 +98,22 @@ class MirrorWalkthroughTest {
         find(By.textContains("Hold up the QR code"), 20_000)
         shot("01_welcome", settle = 3500)
 
-        // tapping the code boxes opens the keyboard; the code must stay in view above it
-        shell("settings put secure show_ime_with_hard_keyboard 1")
-        find(By.clazz("android.widget.EditText")).click()
-        SystemClock.sleep(4000)
-        shot("01b_keyboard", settle = 0)
-        shell("screencap -p /data/local/tmp/${prefix}01c_screencap.png")
-        runCatching {
-            File(shots, "${prefix}01b_ime.txt").writeText(
-                shell("ime list -s") + "\n----\n" +
-                    shell("dumpsys input_method").lines().filter { "Shown" in it || "mCurId" in it || "mServedView" in it || "isInputViewShown" in it }.joinToString("\n") +
-                    "\n----\n" + shell("dumpsys window windows").lines().filter { "InputMethod" in it || "mHasSurface" in it || "isOnScreen" in it || "mFrame=" in it }.take(40).joinToString("\n") +
-                    "\n----\n" + shell("logcat -d -s PalluIme:D").takeLast(2000),
-            )
-        }
-        device.pressBack()
-        SystemClock.sleep(1000)
+        // tapping the code boxes opens the mirror's own keypad
+        find(By.desc("Type the 6-letter code")).click()
+        find(By.text("Type the 6-letter code"))
+        shot("01b_keypad", settle = 800)
+        tapLast("Close")
+        SystemClock.sleep(600)
 
         // a mistyped code shows a friendly error
         typeCode("ZZZZZZ")
-        tap("Start")
+        tapLast("Start")
         find(By.textContains("couldn't find that code"))
         shot("02_wrong_code")
 
         typeCode(s.code)
         shot("03_code_typed", settle = 500)
-        tap("Start")
+        tapLast("Start")
 
         find(By.textContains("Namaste"))
         shot("04_consent")
@@ -167,7 +157,7 @@ class MirrorWalkthroughTest {
         launch()
         find(By.textContains("Hold up the QR code"), 20_000)
         typeCode(s.code)
-        tap("Start")
+        tapLast("Start")
         find(By.textContains("Send our staff a photo")).click()
         find(By.text("Bengali")).click()
         find(By.textContains("permission to use their photo")).click()
@@ -279,11 +269,6 @@ class MirrorWalkthroughTest {
     // ------------------------------------------------------------------ device helpers
 
     /** Waits for something on screen; if it never appears, scrolls the page looking for it. */
-    private fun shell(cmd: String): String =
-        android.os.ParcelFileDescriptor.AutoCloseInputStream(instr.uiAutomation.executeShellCommand(cmd)).use {
-            it.readBytes().decodeToString()
-        }
-
     private fun find(sel: BySelector, timeout: Long = 15_000): UiObject2 {
         device.wait(Until.findObject(sel), timeout)?.let { return it }
         repeat(6) {
@@ -301,9 +286,21 @@ class MirrorWalkthroughTest {
         o.click()
     }
 
+    /** Types a session code on the mirror's keypad (opening it first, clearing what was there). */
     private fun typeCode(code: String) {
-        find(By.clazz("android.widget.EditText")).text = code
+        if (!device.hasObject(By.text("Type the 6-letter code"))) find(By.desc("Type the 6-letter code")).click()
+        find(By.text("Type the 6-letter code"))
+        repeat(6) { device.findObject(By.desc("Delete"))?.let { runCatching { it.click() } } }
+        code.forEach { c -> tapLast(c.toString()) }
         SystemClock.sleep(300)
+    }
+
+    /** The keypad sits on top of the welcome card, so when a label appears twice the keypad's is last. */
+    private fun tapLast(text: String) {
+        find(By.text(text))
+        val all = device.findObjects(By.text(text))
+        device.wait(Until.hasObject(By.text(text).enabled(true)), 5_000)
+        all.last().click()
     }
 
     /** A finished look shows a Shortlist button (text on wide cards, icon on narrow ones). */

@@ -11,11 +11,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.ime
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,13 +31,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalFocusManager
-import kotlinx.coroutines.delay
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,7 +53,7 @@ import com.pallu.tryon.ui.theme.SareeMark
 import com.pallu.tryon.ui.theme.ZariLight
 
 /** Idle screen of the mirror: waits for the customer's QR code. */
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AttractScreen(
     vm: KioskViewModel,
@@ -78,21 +68,8 @@ fun AttractScreen(
     val hasCamera = rememberCameraPermission()
     var code by remember { mutableStateOf("") }
     var askExit by remember { mutableStateOf(false) }
-    // While the on-screen keyboard is up, the welcome text and sarees step aside so the code stays visible.
-    // Typing mode follows the code box's focus (steady while the keyboard is up). When the keyboard is
-    // put away, typing mode ends. The camera window stays put while typing: removing a camera view
-    // takes focus away from the code box and closes the keyboard again.
-    var codeFocused by remember { mutableStateOf(false) }
-    val keyboardUp = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    val focusManager = LocalFocusManager.current
-    LaunchedEffect(codeFocused, keyboardUp) {
-        if (codeFocused && !keyboardUp) {
-            delay(1500)
-            focusManager.clearFocus()
-        }
-    }
-    val typing = codeFocused
-    LaunchedEffect(typing, keyboardUp) { android.util.Log.d("PalluIme", "typing=$typing keyboard=$keyboardUp") }
+    // The mirror's own keypad for typing the code (never the Android keyboard).
+    var keypad by remember { mutableStateOf(false) }
 
     KioskPage {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -105,7 +82,7 @@ fun AttractScreen(
 
             if (compact) {
                 Column(
-                    Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState())
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                         .padding(horizontal = 20.dp, vertical = 28.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
@@ -113,51 +90,52 @@ fun AttractScreen(
                     Headline(0.5f)
                     if (roomForFan) SareeFan(state.showcase, Modifier.fillMaxWidth().height(190.dp))
                     StartCard(
-                        vm, hasCamera, code, { code = it }, onSession, scanFront, onScanFront,
-                        onCodeFocus = { codeFocused = it }, vertical = true, compact = true, modifier = Modifier.fillMaxWidth(),
+                        vm, hasCamera, code, onSession, scanFront, onScanFront,
+                        onOpenKeypad = { keypad = true }, vertical = true, compact = true, modifier = Modifier.fillMaxWidth(),
                     )
                     ErrorNote(state.error)
                     PrivacyLine()
                 }
             } else {
                 Column(
-                    Modifier.fillMaxSize().imePadding().padding(start = side, end = side, top = 56.dp * k, bottom = 28.dp),
+                    Modifier.fillMaxSize().padding(start = side, end = side, top = 56.dp * k, bottom = 28.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp * k),
                 ) {
                     StoreName(storeName) { askExit = true }
                     if (wide) {
                         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(48.dp)) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                                if (!typing) {
-                                    Headline(k * 0.72f) // landscape is short: leave room for the saree fan
-                                    SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
-                                } else {
-                                    Headline(k * 0.6f)
-                                }
+                                Headline(k * 0.72f) // landscape is short: leave room for the saree fan
+                                SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
                             }
                             StartCard(
-                                vm = vm, hasCamera = hasCamera, code = code, onCode = { code = it },
-                                onSession = onSession, scanFront = scanFront, onScanFront = onScanFront, onCodeFocus = { codeFocused = it }, vertical = true,
+                                vm = vm, hasCamera = hasCamera, code = code,
+                                onSession = onSession, scanFront = scanFront, onScanFront = onScanFront, onOpenKeypad = { keypad = true }, vertical = true,
                                 // fixed width: six code boxes + Start must always fit
                                 modifier = Modifier.width(400.dp).verticalScroll(rememberScrollState()),
                             )
                         }
                     } else {
-                        if (!typing) {
-                            Headline(k)
-                            // takes whatever height is left, so the card, errors and privacy line always fit below
-                            SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
-                        } else {
-                            Spacer(Modifier.weight(1f))
-                        }
+                        Headline(k)
+                        // takes whatever height is left, so the card, errors and privacy line always fit below
+                        SareeFan(state.showcase, Modifier.fillMaxWidth().weight(1f))
                         StartCard(
-                            vm, hasCamera, code, { code = it }, onSession, scanFront, onScanFront,
-                            onCodeFocus = { codeFocused = it }, vertical = false, modifier = Modifier.fillMaxWidth(),
+                            vm, hasCamera, code, onSession, scanFront, onScanFront,
+                            onOpenKeypad = { keypad = true }, vertical = false, modifier = Modifier.fillMaxWidth(),
                         )
                     }
                     ErrorNote(state.error)
-                    if (!typing) PrivacyLine()
+                    PrivacyLine()
                 }
+            }
+            if (keypad) {
+                CodeKeypad(
+                    code = code,
+                    onCode = { code = it },
+                    onStart = { keypad = false; vm.lookup(code, onSession) },
+                    onClose = { keypad = false },
+                    busy = state.lookingUp,
+                )
             }
         }
     }
@@ -245,15 +223,13 @@ private fun StartCard(
     vm: KioskViewModel,
     hasCamera: Boolean,
     code: String,
-    onCode: (String) -> Unit,
     onSession: (Boolean) -> Unit,
     scanFront: Boolean,
     onScanFront: (Boolean) -> Unit,
     vertical: Boolean,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
-    showScanner: Boolean = true,
-    onCodeFocus: (Boolean) -> Unit = {},
+    onOpenKeypad: () -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val scanner: @Composable (Modifier) -> Unit = { m ->
@@ -279,16 +255,12 @@ private fun StartCard(
                 lineHeight = if (compact) 29.sp else 38.sp,
                 color = OnMirror,
             )
-            Muted("Or type the 6-letter code", scale = 0.82f)
-            CodeBoxes(
-                code, onCode, onDone = { vm.lookup(code, onSession) },
-                boxSize = if (compact) 38.dp else if (!showScanner) 64.dp else 44.dp,
-                onFocusChange = onCodeFocus,
-            )
+            Muted("Or tap the boxes to type the 6-letter code", scale = 0.82f)
+            CodeBoxes(code, onClick = onOpenKeypad, boxSize = if (compact) 38.dp else 44.dp)
             GoldButton(
                 if (state.lookingUp) "Finding your sarees…" else "Start",
-                onClick = { vm.lookup(code, onSession) },
-                enabled = code.length == 6 && !state.lookingUp,
+                onClick = { if (code.length == 6) vm.lookup(code, onSession) else onOpenKeypad() },
+                enabled = !state.lookingUp,
                 modifier = if (compact) Modifier.fillMaxWidth() else Modifier,
             )
         }
@@ -312,11 +284,9 @@ private fun StartCard(
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(30.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (showScanner) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        scanner(Modifier.size(236.dp))
-                        switch()
-                    }
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    scanner(Modifier.size(236.dp))
+                    switch()
                 }
                 words(Modifier.weight(1f))
             }

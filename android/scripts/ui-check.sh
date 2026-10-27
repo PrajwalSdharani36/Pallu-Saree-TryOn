@@ -21,7 +21,6 @@ run tabletLandscape
 adb shell wm size 1080x2400; adb shell wm density 420  # a typical staff phone
 run phoneStaff
 adb pull /sdcard/Android/data/com.pallu.tryon/files/shots "$OUT/" || true
-for f in $(adb shell ls /data/local/tmp/ | tr -d "\r" | grep screencap); do adb pull "/data/local/tmp/$f" "$OUT/shots/$f" || true; done
 adb logcat -d > "$OUT/logcat.txt" || true
 grep -nE "FATAL|AndroidRuntime|PalluCamera|E Compose|CameraX" "$OUT/logcat.txt" > "$OUT/logcat-app.txt" || true
 adb shell wm size reset

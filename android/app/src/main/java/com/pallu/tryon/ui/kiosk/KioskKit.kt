@@ -1,13 +1,5 @@
 package com.pallu.tryon.ui.kiosk
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.ime
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -18,13 +10,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,9 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -45,11 +32,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,9 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -81,7 +60,6 @@ import com.pallu.tryon.ui.theme.ZariBorder
 import com.pallu.tryon.ui.theme.ZariLight
 import com.pallu.tryon.ui.theme.mirrorPalette
 import com.pallu.tryon.ui.theme.rememberSweep
-import kotlinx.coroutines.delay
 
 fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
@@ -215,60 +193,6 @@ fun ScanWindow(modifier: Modifier = Modifier, content: @Composable BoxScope.() -
             drawLine(GoldBright, Offset(inset * 1.6f, y), Offset(size.width - inset * 1.6f, y), 2.dp.toPx())
         }
     }
-}
-
-/** Six letter boxes for the session code, backed by one text field (so the keyboard just works). */
-@Composable
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
-fun CodeBoxes(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onDone: () -> Unit,
-    boxSize: Dp = 48.dp,
-    onFocusChange: (Boolean) -> Unit = {},
-) {
-    // When the keyboard opens, scroll the boxes into view so customers can see what they type.
-    val bring = remember { BringIntoViewRequester() }
-    var focused by remember { mutableStateOf(false) }
-    // The keyboard's height, straight from the window insets (its "visible" flag is unreliable in kiosk mode).
-    val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
-    LaunchedEffect(focused, keyboardHeight) {
-        if (focused) {
-            delay(300) // let the keyboard finish sliding in
-            bring.bringIntoView()
-        }
-    }
-    BasicTextField(
-        modifier = Modifier.bringIntoViewRequester(bring).onFocusChanged { focused = it.hasFocus; onFocusChange(it.hasFocus) },
-        value = value,
-        onValueChange = { raw -> onValueChange(raw.filter { it.isLetterOrDigit() }.uppercase().take(6)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Go),
-        keyboardActions = KeyboardActions(onGo = { onDone() }),
-        textStyle = TextStyle(color = Color.Transparent),
-        cursorBrush = androidx.compose.ui.graphics.SolidColor(Color.Transparent),
-        decorationBox = { inner ->
-            Box {
-                Box(Modifier.size(1.dp)) { inner() }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    repeat(6) { i ->
-                        val ch = value.getOrNull(i)?.toString().orEmpty()
-                        val active = i == value.length
-                        Box(
-                            Modifier
-                                .size(boxSize, boxSize * 1.3f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Mirror)
-                                .border(if (active) 2.dp else 1.dp, if (active) ZariLight else MirrorLine, RoundedCornerShape(10.dp)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(ch, fontFamily = Rozha, fontSize = (boxSize.value * 0.58f).sp, color = OnMirror)
-                        }
-                    }
-                }
-            }
-        },
-    )
 }
 
 /**
