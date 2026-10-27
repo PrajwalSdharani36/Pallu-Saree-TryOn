@@ -16,7 +16,6 @@ import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
-import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import com.pallu.tryon.data.AppMode
 import com.pallu.tryon.data.AppSettings
@@ -337,18 +336,8 @@ class MirrorWalkthroughTest {
         error("No finished look after ${timeout / 1000}s")
     }
 
-    /**
-     * Tap the element with exactly this text. Uses the older UiObject API, which looks the element up
-     * again at the moment of the tap, so a card that keeps redrawing can't go stale in between.
-     */
-    private fun tapText(text: String) {
-        find(By.text(text))
-        val o = device.findObject(UiSelector().text(text))
-        // click() may report false with Compose even though the tap landed, so tap once; the
-        // next step waits for whatever the tap should open
-        if (runCatching { o.click() }.isSuccess) return
-        clickRetry(By.text(text))
-    }
+    /** Tap the element with exactly this text (UiObject2 taps are correct in landscape too). */
+    private fun tapText(text: String) = clickRetry(By.text(text))
 
     private fun clickRetry(sel: BySelector) {
         repeat(3) { if (runCatching { find(sel).click() }.isSuccess) return else SystemClock.sleep(400) }
