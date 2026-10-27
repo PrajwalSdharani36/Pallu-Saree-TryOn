@@ -101,12 +101,15 @@ class MirrorWalkthroughTest {
         // tapping the code boxes opens the keyboard; the code must stay in view above it
         shell("settings put secure show_ime_with_hard_keyboard 1")
         find(By.clazz("android.widget.EditText")).click()
-        SystemClock.sleep(2500)
+        SystemClock.sleep(4000)
         shot("01b_keyboard", settle = 0)
+        shell("screencap -p /data/local/tmp/${prefix}01c_screencap.png")
         runCatching {
             File(shots, "${prefix}01b_ime.txt").writeText(
                 shell("ime list -s") + "\n----\n" +
-                    shell("dumpsys input_method").lines().filter { "Shown" in it || "mCurId" in it || "mServedView" in it || "isInputViewShown" in it }.joinToString("\n"),
+                    shell("dumpsys input_method").lines().filter { "Shown" in it || "mCurId" in it || "mServedView" in it || "isInputViewShown" in it }.joinToString("\n") +
+                    "\n----\n" + shell("dumpsys window windows").lines().filter { "InputMethod" in it || "mHasSurface" in it || "isOnScreen" in it || "mFrame=" in it }.take(40).joinToString("\n") +
+                    "\n----\n" + shell("logcat -d -s PalluIme:D").takeLast(2000),
             )
         }
         device.pressBack()

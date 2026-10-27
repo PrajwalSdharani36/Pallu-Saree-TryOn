@@ -35,6 +35,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,6 +77,7 @@ fun AttractScreen(
     var askExit by remember { mutableStateOf(false) }
     // While the on-screen keyboard is up, the welcome text and sarees step aside so the code stays visible.
     val typing = WindowInsets.isImeVisible
+    LaunchedEffect(typing) { android.util.Log.d("PalluIme", "keyboard visible to the mirror: $typing") }
 
     KioskPage {
         BoxWithConstraints(Modifier.fillMaxSize()) {
