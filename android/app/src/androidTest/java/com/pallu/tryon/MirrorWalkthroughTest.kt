@@ -204,8 +204,9 @@ class MirrorWalkthroughTest {
 
     private fun configure(mode: AppMode) = runBlocking {
         app.container.settingsStore.save(
-            AppSettings(serverUrl = server, apiKey = key, mode = mode, storeName = "Lakshmi Silks", kioskIdleSeconds = 900, kioskLight = light),
+            AppSettings(serverUrl = server, apiKey = key, mode = mode, storeName = "Lakshmi Silks", kioskIdleSeconds = 900),
         )
+        app.container.settingsStore.setKioskLight(light)
     }
 
     private fun launch() {
