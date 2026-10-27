@@ -219,7 +219,13 @@ fun ScanWindow(modifier: Modifier = Modifier, content: @Composable BoxScope.() -
 /** Six letter boxes for the session code, backed by one text field (so the keyboard just works). */
 @Composable
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
-fun CodeBoxes(value: String, onValueChange: (String) -> Unit, onDone: () -> Unit, boxSize: Dp = 48.dp) {
+fun CodeBoxes(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onDone: () -> Unit,
+    boxSize: Dp = 48.dp,
+    onFocusChange: (Boolean) -> Unit = {},
+) {
     // When the keyboard opens, scroll the boxes into view so customers can see what they type.
     val bring = remember { BringIntoViewRequester() }
     var focused by remember { mutableStateOf(false) }
@@ -231,7 +237,7 @@ fun CodeBoxes(value: String, onValueChange: (String) -> Unit, onDone: () -> Unit
         }
     }
     BasicTextField(
-        modifier = Modifier.bringIntoViewRequester(bring).onFocusChanged { focused = it.isFocused },
+        modifier = Modifier.bringIntoViewRequester(bring).onFocusChanged { focused = it.isFocused; onFocusChange(it.isFocused) },
         value = value,
         onValueChange = { raw -> onValueChange(raw.filter { it.isLetterOrDigit() }.uppercase().take(6)) },
         singleLine = true,

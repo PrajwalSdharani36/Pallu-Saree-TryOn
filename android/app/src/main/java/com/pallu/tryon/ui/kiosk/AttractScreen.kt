@@ -35,6 +35,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalFocusManager
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,8 +78,19 @@ fun AttractScreen(
     var code by remember { mutableStateOf("") }
     var askExit by remember { mutableStateOf(false) }
     // While the on-screen keyboard is up, the welcome text and sarees step aside so the code stays visible.
-    val typing = WindowInsets.isImeVisible
-    LaunchedEffect(typing) { android.util.Log.d("PalluIme", "keyboard visible to the mirror: $typing") }
+    // Typing mode follows the code box's focus (steady while the keyboard is up; the keyboard's own
+    // "visible" signal flickers while it animates). When the keyboard is put away, typing mode ends.
+    var codeFocused by remember { mutableStateOf(false) }
+    val keyboardUp = WindowInsets.isImeVisible
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(codeFocused, keyboardUp) {
+        if (codeFocused && !keyboardUp) {
+            delay(1500)
+            focusManager.clearFocus()
+        }
+    }
+    val typing = codeFocused
+    LaunchedEffect(typing, keyboardUp) { android.util.Log.d("PalluIme", "typing=$typing keyboard=$keyboardUp") }
 
     KioskPage {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -99,7 +112,7 @@ fun AttractScreen(
                     if (roomForFan) SareeFan(state.showcase, Modifier.fillMaxWidth().height(190.dp))
                     StartCard(
                         vm, hasCamera, code, { code = it }, onSession, scanFront, onScanFront,
-                        vertical = true, compact = true, modifier = Modifier.fillMaxWidth(),
+                        onCodeFocus = { codeFocused = it }, vertical = true, compact = true, modifier = Modifier.fillMaxWidth(),
                     )
                     ErrorNote(state.error)
                     PrivacyLine()
@@ -118,7 +131,7 @@ fun AttractScreen(
                             }
                             StartCard(
                                 vm = vm, hasCamera = hasCamera, code = code, onCode = { code = it },
-                                onSession = onSession, scanFront = scanFront, onScanFront = onScanFront, vertical = true,
+                                onSession = onSession, scanFront = scanFront, onScanFront = onScanFront, onCodeFocus = { codeFocused = it }, vertical = true,
                                 // fixed width: six code boxes + Start must always fit
                                 modifier = Modifier.width(400.dp).verticalScroll(rememberScrollState()),
                             )
@@ -133,7 +146,7 @@ fun AttractScreen(
                         }
                         StartCard(
                             vm, hasCamera, code, { code = it }, onSession, scanFront, onScanFront,
-                            vertical = false, showScanner = !typing, modifier = Modifier.fillMaxWidth(),
+                            onCodeFocus = { codeFocused = it }, vertical = false, showScanner = !typing, modifier = Modifier.fillMaxWidth(),
                         )
                     }
                     ErrorNote(state.error)
@@ -234,6 +247,7 @@ private fun StartCard(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     showScanner: Boolean = true,
+    onCodeFocus: (Boolean) -> Unit = {},
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val scanner: @Composable (Modifier) -> Unit = { m ->
@@ -260,7 +274,11 @@ private fun StartCard(
                 color = OnMirror,
             )
             Muted("Or type the 6-letter code", scale = 0.82f)
-            CodeBoxes(code, onCode, onDone = { vm.lookup(code, onSession) }, boxSize = if (compact) 38.dp else if (!showScanner) 64.dp else 44.dp)
+            CodeBoxes(
+                code, onCode, onDone = { vm.lookup(code, onSession) },
+                boxSize = if (compact) 38.dp else if (!showScanner) 64.dp else 44.dp,
+                onFocusChange = onCodeFocus,
+            )
             GoldButton(
                 if (state.lookingUp) "Finding your sarees…" else "Start",
                 onClick = { vm.lookup(code, onSession) },
