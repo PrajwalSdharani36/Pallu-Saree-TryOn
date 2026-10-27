@@ -55,48 +55,66 @@ fun WaitGiftScreen(
     KioskPage(ambient = state.session?.items?.firstOrNull()?.saree?.imageUrl) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val k = headlineSize(maxWidth)
+            val wide = maxWidth > maxHeight
+            val story: @Composable () -> Unit = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(26.dp)) {
+                    DrapingLoom(Modifier.size(if (wide) 150.dp else 180.dp))
+                    Text(
+                        "Send their photo to our staff",
+                        fontFamily = Rozha, fontSize = (54 * k * (if (wide) 0.85f else 1f)).sp, lineHeight = (60 * k * (if (wide) 0.85f else 1f)).sp,
+                        color = OnMirror, textAlign = TextAlign.Center,
+                    )
+                    Muted(
+                        "WhatsApp a clear photo of them to the staff member who helped you. " +
+                            "It appears here by itself and their looks start straight away.",
+                        scale = k * 0.95f, align = TextAlign.Center,
+                    )
+                }
+            }
+            val actions: @Composable () -> Unit = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    state.session?.let { s ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            s.items.take(5).forEach { item ->
+                                RemoteImage(
+                                    item.saree.imageUrl, item.saree.name,
+                                    Modifier.size(84.dp, 108.dp).clip(RoundedCornerShape(16.dp))
+                                        .border(1.dp, GlassLine, RoundedCornerShape(16.dp)),
+                                )
+                            }
+                        }
+                        Text(
+                            "Your code is ${s.code}",
+                            style = MaterialTheme.typography.titleMedium, color = OnMirror,
+                            modifier = Modifier.clip(RoundedCornerShape(50)).background(GlassStrong)
+                                .padding(horizontal = 22.dp, vertical = 10.dp),
+                        )
+                    }
+                    ErrorNote(state.error)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlineButton("Choose a photo on this screen instead", { vm.stopWaiting(); onUseThisDevice() })
+                        QuietButton("Cancel") { vm.stopWaiting(); onCancel() }
+                    }
+                }
+            }
             Box(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = KioskSide, vertical = 110.dp),
+                    .padding(horizontal = KioskSide, vertical = if (wide) 100.dp else 110.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                GlassPanel(Modifier.widthIn(max = 720.dp), padding = PaddingValues(horizontal = 40.dp, vertical = 44.dp)) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(28.dp),
-                    ) {
-                        DrapingLoom(Modifier.size(180.dp))
-                        Text(
-                            "Send their photo to our staff",
-                            fontFamily = Rozha, fontSize = (54 * k).sp, lineHeight = (60 * k).sp,
-                            color = OnMirror, textAlign = TextAlign.Center,
-                        )
-                        Muted(
-                            "WhatsApp a clear photo of them to the staff member who helped you. " +
-                                "It appears here by itself and their looks start straight away.",
-                            scale = k * 0.95f, align = TextAlign.Center,
-                        )
-                        state.session?.let { s ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                                s.items.take(5).forEach { item ->
-                                    RemoteImage(
-                                        item.saree.imageUrl, item.saree.name,
-                                        Modifier.size(84.dp, 108.dp).clip(RoundedCornerShape(16.dp))
-                                            .border(1.dp, GlassLine, RoundedCornerShape(16.dp)),
-                                    )
-                                }
-                            }
-                            Text(
-                                "Your code is ${s.code}",
-                                style = MaterialTheme.typography.titleMedium, color = OnMirror,
-                                modifier = Modifier.clip(RoundedCornerShape(50)).background(GlassStrong)
-                                    .padding(horizontal = 22.dp, vertical = 10.dp),
-                            )
+                if (wide) {
+                    // landscape: side by side, so the buttons are on screen without scrolling
+                    GlassPanel(Modifier.widthIn(max = 1120.dp), padding = PaddingValues(horizontal = 44.dp, vertical = 40.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(48.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.weight(1f)) { story() }
+                            Box(Modifier.weight(1f)) { actions() }
                         }
-                        ErrorNote(state.error)
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlineButton("Choose a photo on this screen instead", { vm.stopWaiting(); onUseThisDevice() })
-                            QuietButton("Cancel") { vm.stopWaiting(); onCancel() }
+                    }
+                } else {
+                    GlassPanel(Modifier.widthIn(max = 720.dp), padding = PaddingValues(horizontal = 40.dp, vertical = 44.dp)) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(28.dp)) {
+                            story()
+                            actions()
                         }
                     }
                 }
