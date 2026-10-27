@@ -105,9 +105,11 @@ On first launch, enter the server address (for example `192.168.1.20:8000`, the 
 4. **Me:** a 4-second countdown takes one full-length photo.
    **Someone else (gift):** the mirror asks the customer to WhatsApp a photo of the person to the staff member. The staff member taps **Add photo** on that customer's QR screen and confirms permission, and the looks start on the mirror automatically.
 5. The looks appear one by one. Customers swipe, press and hold to compare with the original photo, and tap **Shortlist** on the ones they like.
-6. **I'm done** deletes the photo and every generated image right away. The shortlist stays, so staff see it live on their phone and on the admin page.
+   - **Change** (top corner of a look) makes a new look of the same saree in another drape, next to the original, so the two can be compared.
+   - **Try more sarees** opens the store's collection; the picked sarees are draped with the same photo, no new QR or photo needed.
+6. **I'm done** first asks *All done?* (with a last chance to try more), then deletes the photo and every generated image right away. The shortlist stays, so staff see it live on their phone and on the admin page.
 
-Staff can scan more sarees into a session while the customer is at the mirror. They're draped straight away.
+Staff can also scan more sarees into a session while the customer is at the mirror (open the customer on the staff phone, then **Scan more**). They're draped straight away.
 
 ## Privacy
 
@@ -135,6 +137,7 @@ All endpoints except `/api/health` and `/api/drape-styles` need the `X-API-Key` 
 | `POST /api/sessions/{id}/photo` | kiosk, staff | Upload photo (needs `consent=true`), start generation; staff use it for gift photos |
 | `GET /api/sessions/{id}` | both | Poll status and results |
 | `POST /api/sessions/{id}/items/{item}/favorite` · `/retry` | kiosk | Shortlist / regenerate one look |
+| `POST /api/sessions/{id}/items/{item}/redrape` | kiosk | New look of the same saree in another drape (`{"drape_style": "bengali"}`) |
 | `POST /api/sessions/{id}/finish` | kiosk | Customer finished: delete photos, keep shortlist |
 | `GET /api/stats` | admin | Today's customers, try-ons, speed, most-loved sarees |
 
