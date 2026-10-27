@@ -86,6 +86,7 @@ fun AttractScreen(
             val wide = maxWidth > maxHeight
             // Phones (and very narrow tablets): one scrolling column with everything sized down.
             val compact = !wide && maxWidth < 600.dp
+            val roomForFan = maxHeight > 640.dp
 
             when {
                 compact -> Column(
@@ -95,7 +96,7 @@ fun AttractScreen(
                 ) {
                     StoreName(storeName) { askExit = true }
                     Headline(0.55f, center = false)
-                    if (maxHeight > 640.dp) SareeFan(state.showcase, Modifier.fillMaxWidth().height(200.dp))
+                    if (roomForFan) SareeFan(state.showcase, Modifier.fillMaxWidth().height(200.dp))
                     StartCard(
                         vm, hasCamera, code, onSession, scanFront, onScanFront,
                         onOpenKeypad = { keypad = true }, vertical = true, compact = true, modifier = Modifier.fillMaxWidth(),
