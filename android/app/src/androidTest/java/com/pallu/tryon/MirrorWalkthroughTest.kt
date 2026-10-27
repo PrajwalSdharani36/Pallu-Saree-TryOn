@@ -144,7 +144,7 @@ class MirrorWalkthroughTest {
         holdToCompare("13_compare_original")
 
         // same saree, another drape: one tap on the drape row makes a new look right next to it
-        tapText("Bengali")
+        clickRetry(By.text("Bengali"))
         find(By.text("Bengali drape"), 20_000)
         shot("13c_new_drape", settle = 1500)
 
@@ -380,7 +380,9 @@ class MirrorWalkthroughTest {
     }
 
     private fun holdToCompare(name: String) {
-        val x = device.displayWidth / 2
+        // the look: centred in portrait, in the left part of the screen in landscape (the panel is on the right)
+        val landscape = device.displayWidth > device.displayHeight
+        val x = (device.displayWidth * (if (landscape) 0.3 else 0.5)).toInt()
         val y = (device.displayHeight * 0.42).toInt()
         val hold = thread { device.swipe(x, y, x, y, 400) } // ~2 s press in place
         SystemClock.sleep(1000)

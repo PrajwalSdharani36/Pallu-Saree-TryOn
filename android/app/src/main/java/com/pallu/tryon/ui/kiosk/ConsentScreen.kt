@@ -43,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -171,13 +172,17 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
                 ) {
                     OutlineButton("Cancel", onBack)
                     Spacer(Modifier.weight(1f))
-                    GoldButton(
-                        text = if (state.mode == TryOnMode.GIFT) "Continue" else "Take my photo",
-                        icon = if (state.mode == TryOnMode.GIFT) Icons.Filled.PhotoLibrary else Icons.Filled.PhotoCamera,
-                        onClick = onContinue,
-                        enabled = state.mode != null && state.consent,
-                        modifier = Modifier.widthIn(min = 300.dp),
-                    )
+                    // keyed by the choice so the button is rebuilt, not relabelled: screen readers (and
+                    // the walkthrough) otherwise keep hearing the old "Take my photo"
+                    key(state.mode) {
+                        GoldButton(
+                            text = if (state.mode == TryOnMode.GIFT) "Continue" else "Take my photo",
+                            icon = if (state.mode == TryOnMode.GIFT) Icons.Filled.PhotoLibrary else Icons.Filled.PhotoCamera,
+                            onClick = onContinue,
+                            enabled = state.mode != null && state.consent,
+                            modifier = Modifier.widthIn(min = 300.dp),
+                        )
+                    }
                 }
             }
         }
