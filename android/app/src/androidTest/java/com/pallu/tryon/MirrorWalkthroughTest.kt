@@ -295,7 +295,9 @@ class MirrorWalkthroughTest {
     private fun find(sel: BySelector, timeout: Long = 15_000): UiObject2 {
         device.wait(Until.findObject(sel), timeout)?.let { return it }
         repeat(6) {
-            val list = device.findObject(By.scrollable(true)) ?: return@repeat
+            // the biggest scrollable is the page; a small one is usually a sideways row of thumbnails
+            val list = device.findObjects(By.scrollable(true))
+                .maxByOrNull { runCatching { it.visibleBounds.width() * it.visibleBounds.height() }.getOrDefault(0) } ?: return@repeat
             runCatching { list.scroll(Direction.DOWN, 0.7f) }
             SystemClock.sleep(600)
             device.findObject(sel)?.let { return it }
