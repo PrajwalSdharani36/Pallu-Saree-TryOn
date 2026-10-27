@@ -99,9 +99,16 @@ class MirrorWalkthroughTest {
         shot("01_welcome", settle = 3500)
 
         // tapping the code boxes opens the keyboard; the code must stay in view above it
+        shell("settings put secure show_ime_with_hard_keyboard 1")
         find(By.clazz("android.widget.EditText")).click()
-        SystemClock.sleep(2000)
+        SystemClock.sleep(2500)
         shot("01b_keyboard", settle = 0)
+        runCatching {
+            File(shots, "${prefix}01b_ime.txt").writeText(
+                shell("ime list -s") + "\n----\n" +
+                    shell("dumpsys input_method").lines().filter { "Shown" in it || "mCurId" in it || "mServedView" in it || "isInputViewShown" in it }.joinToString("\n"),
+            )
+        }
         device.pressBack()
         SystemClock.sleep(1000)
 
@@ -269,6 +276,11 @@ class MirrorWalkthroughTest {
     // ------------------------------------------------------------------ device helpers
 
     /** Waits for something on screen; if it never appears, scrolls the page looking for it. */
+    private fun shell(cmd: String): String =
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(instr.uiAutomation.executeShellCommand(cmd)).use {
+            it.readBytes().decodeToString()
+        }
+
     private fun find(sel: BySelector, timeout: Long = 15_000): UiObject2 {
         device.wait(Until.findObject(sel), timeout)?.let { return it }
         repeat(6) {
