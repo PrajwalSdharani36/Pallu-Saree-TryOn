@@ -16,6 +16,7 @@ import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import com.pallu.tryon.data.AppMode
 import com.pallu.tryon.data.AppSettings
@@ -143,17 +144,17 @@ class MirrorWalkthroughTest {
         holdToCompare("13_compare_original")
 
         // same saree, another drape: a new look appears right next to it
-        clickRetry(By.text("Change")) // the look card redraws as the list updates
+        tapText("Change") // the look card redraws as the list updates
         find(By.text("Try another drape"))
         shot("13b_drape_sheet", settle = 800)
-        clickRetry(By.text("Bengali"))
+        tapText("Bengali")
         find(By.text("Bengali drape"), 20_000)
         shot("13c_new_drape", settle = 1500)
 
         // one more saree from the collection, with the same photo
-        clickRetry(By.text("Try more sarees"))
+        tapText("Try more sarees")
         find(By.textContains("Pick from our collection"), 15_000)
-        clickRetry(By.text("Ivory Kasavu, Kerala"))
+        tapText("Ivory Kasavu, Kerala")
         shot("13d_try_more", settle = 1500)
         find(By.text("Try this saree")).click()
         find(By.textStartsWith("All 6 are ready"), 120_000)
@@ -161,7 +162,7 @@ class MirrorWalkthroughTest {
         tapShortlist()
 
         // finishing asks first, because it deletes the photo
-        clickRetry(By.text("I'm done"))
+        tapText("I'm done")
         find(By.text("All done?"))
         shot("13f_done_check", settle = 800)
         find(By.text("Yes, I'm done")).click()
@@ -337,6 +338,17 @@ class MirrorWalkthroughTest {
             SystemClock.sleep(500)
         }
         error("No finished look after ${timeout / 1000}s")
+    }
+
+    /**
+     * Tap the element with exactly this text. Uses the older UiObject API, which looks the element up
+     * again at the moment of the tap, so a card that keeps redrawing can't go stale in between.
+     */
+    private fun tapText(text: String) {
+        find(By.text(text))
+        val o = device.findObject(UiSelector().text(text))
+        repeat(5) { if (runCatching { o.click() }.getOrDefault(false)) return else SystemClock.sleep(400) }
+        clickRetry(By.text(text))
     }
 
     private fun clickRetry(sel: BySelector) {

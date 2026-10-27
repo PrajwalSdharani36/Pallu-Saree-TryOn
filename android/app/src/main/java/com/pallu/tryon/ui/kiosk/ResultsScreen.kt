@@ -403,7 +403,7 @@ private fun InfoPanel(item: SessionItem, onFavorite: () -> Unit, modifier: Modif
                     Icon(
                         if (item.favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                         contentDescription = if (item.favorite) "Shortlisted" else "Shortlist",
-                        tint = Color.White,
+                        tint = if (item.favorite) Color.White else OnMirror,
                         modifier = Modifier.size(24.dp).scale(heartScale),
                     )
                 }
@@ -414,7 +414,8 @@ private fun InfoPanel(item: SessionItem, onFavorite: () -> Unit, modifier: Modif
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (item.favorite) Kumkum else MirrorRaised2,
-                        contentColor = Color.White,
+                        // white only on the red "Shortlisted"; theme text otherwise, so it reads in light mode
+                        contentColor = if (item.favorite) Color.White else OnMirror,
                     ),
                 ) {
                     Icon(
