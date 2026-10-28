@@ -65,8 +65,9 @@ the ones marked ✓ on every push.
 - Sign in with the store key
 - Today's numbers, AI engine status dot
 - Add a saree (photo, name, fabric, price, colour, barcode or auto barcode, notes), AI reads border, pallu and blouse
-- Catalogue with search, printable barcode labels, remove
-- Recent customers with their shortlists
+- Catalogue and Recent customers on separate tabs (the last tab is remembered)
+- Catalogue with search and a count, printable barcode labels, remove; two per row on a phone
+- Recent customers with their shortlists and start time (date shown for older ones), Show more (15 at a time, up to 100)
 
 ## Server
 - OpenRouter (default), Gemini or demo engine; startup credit/key check shown on the admin page

@@ -82,7 +82,8 @@ textarea{min-height:64px;resize:vertical}
 .cat-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
 .cat-head h2{margin:0}
 .cat-head input{max-width:280px;margin-left:auto}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,42vw),1fr));gap:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(200px,40vw),1fr));gap:24px}
+@media (max-width:600px){.grid{gap:14px}.cat-head input{max-width:none;margin-left:0}.saree .body{padding:12px}.saree .acts a,.saree .acts button{white-space:nowrap;padding:8px 2px;font-size:.8rem}}
 .saree{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column}
 .saree .ph{aspect-ratio:3/4;background:var(--line);position:relative}
 .saree .ph img{width:100%;height:100%;object-fit:cover;display:block}
@@ -100,7 +101,12 @@ textarea{min-height:64px;resize:vertical}
 .tag.pending{color:var(--warn)} .tag.done{color:var(--ok)} .tag.failed{color:var(--bad)}
 .empty{padding:32px;text-align:center;color:var(--muted);border:2px dashed var(--line);border-radius:var(--radius-lg)}
 
-.sessions{margin-top:56px}
+.tabs{display:flex;gap:6px;padding:6px;margin-bottom:28px;background:var(--paper);border:1px solid var(--line);border-radius:999px;width:max-content;max-width:100%}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:11px 22px;font-weight:600;cursor:pointer;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--arakku);color:#fff}
+.tabs .count{font-weight:500;opacity:.8;margin-left:6px}
+.more{display:block;margin:22px auto 0;padding:12px 26px;border:1px solid var(--line);border-radius:999px;background:var(--paper);font-weight:600;cursor:pointer}
+.more:disabled{opacity:.55;cursor:default}
 table{width:100%;border-collapse:collapse;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden}
 th,td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-weight:500;color:var(--muted);font-size:.9rem}
@@ -171,13 +177,20 @@ td.code{font-family:"Fraunces",serif;font-weight:600;font-size:1.1rem;letter-spa
     </aside>
 
     <section>
+      <div class="tabs" role="tablist" aria-label="Store">
+        <button role="tab" id="tabCat" aria-controls="catPanel" aria-selected="true">Catalogue<span class="count" id="catCount"></span></button>
+        <button role="tab" id="tabCust" aria-controls="custPanel" aria-selected="false">Recent customers<span class="count" id="custCount"></span></button>
+      </div>
+
+      <div id="catPanel" role="tabpanel" aria-labelledby="tabCat">
       <div class="cat-head">
         <h2>Catalogue</h2>
         <input id="search" type="text" placeholder="Search name, barcode, fabric" aria-label="Search catalogue">
       </div>
       <div class="grid" id="grid"></div>
+      </div>
 
-      <div class="sessions">
+      <div id="custPanel" role="tabpanel" aria-labelledby="tabCust" hidden>
         <h2>Recent customers</h2>
         <div class="table-wrap">
           <table>
@@ -185,6 +198,7 @@ td.code{font-family:"Fraunces",serif;font-weight:600;font-size:1.1rem;letter-spa
             <tbody id="sessions"></tbody>
           </table>
         </div>
+        <button class="more" id="moreCust" type="button" hidden>Show more customers</button>
       </div>
     </section>
   </div>
@@ -253,6 +267,7 @@ async function loadCatalog() {
   const q = $("#search").value.trim();
   const list = await api("/api/sarees" + (q ? "?q=" + encodeURIComponent(q) : ""));
   const grid = $("#grid");
+  if (!q) $("#catCount").textContent = list.length ? `(${list.length})` : "";
   if (!list.length) {
     grid.innerHTML = `<div class="empty">${q ? "No sarees match that search." : "Your catalogue is empty. Add your first saree with the form."}</div>`;
     return;
@@ -303,12 +318,45 @@ $("#addForm").addEventListener("submit", async (e) => {
   } finally { btn.disabled = false; btn.textContent = "Add to catalogue"; }
 });
 
+// Tabs: catalogue and customers each get the whole width, so a big catalogue never buries the customers.
+const tabs = { cat: [$("#tabCat"), $("#catPanel")], cust: [$("#tabCust"), $("#custPanel")] };
+function showTab(name) {
+  for (const [key, [btn, panel]] of Object.entries(tabs)) {
+    const on = key === name;
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+    btn.tabIndex = on ? 0 : -1;
+    panel.hidden = !on;
+  }
+  try { localStorage.setItem("pallu.tab", name); } catch {}
+}
+$("#tabCat").addEventListener("click", () => showTab("cat"));
+$("#tabCust").addEventListener("click", () => showTab("cust"));
+$(".tabs").addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  const next = $("#tabCat").getAttribute("aria-selected") === "true" ? "cust" : "cat";
+  showTab(next); tabs[next][0].focus();
+});
+try { if (localStorage.getItem("pallu.tab") === "cust") showTab("cust"); } catch {}
+
+let custLimit = 15;
+$("#moreCust").addEventListener("click", () => { custLimit = Math.min(custLimit + 15, 100); loadSessions(); });
+
+function startedAt(iso) {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return d.toDateString() === new Date().toDateString()
+    ? time : d.toLocaleDateString([], { day: "numeric", month: "short" }) + ", " + time;
+}
+
 async function loadSessions() {
-  const list = await api("/api/sessions?limit=15");
+  const list = await api(`/api/sessions?limit=${custLimit}`);
+  const more = $("#moreCust");
+  more.hidden = list.length < custLimit || custLimit >= 100;
+  $("#custCount").textContent = list.length ? `(${list.length}${list.length >= custLimit && custLimit < 100 ? "+" : ""})` : "";
   const words = { open: "Waiting at mirror", generating: "Creating looks", ready: "Viewing looks", closed: "Finished", expired: "Expired" };
   $("#sessions").innerHTML = list.length ? list.map((s) => {
     const favs = s.items.filter((i) => i.favorite).map((i) => esc(i.saree.name));
-    const started = new Date(s.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const started = startedAt(s.created_at);
     return `<tr><td class="code">${esc(s.code)}</td><td>${esc(s.customer_label) || "–"}${s.mode === "gift" ? " (gift)" : ""}</td>
       <td>${words[s.status] || s.status}</td><td>${s.total}</td>
       <td class="fav">${favs.length ? favs.join("<br>") : "–"}</td><td>${started}</td></tr>`;
