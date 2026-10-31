@@ -97,6 +97,20 @@ textarea{min-height:64px;resize:vertical}
 .saree .acts a,.saree .acts button{flex:1;text-align:center;font-size:.88rem;padding:8px 6px;border:1px solid var(--line);
   border-radius:var(--radius-sm);background:transparent;cursor:pointer;color:var(--ink);text-decoration:none}
 .saree .acts button.rm:hover{border-color:var(--bad);color:var(--bad)}
+.saree .acts{flex-wrap:wrap}
+.saree .acts button.edit{flex-basis:100%;border-color:var(--arakku);color:var(--arakku);font-weight:600}
+.saree .acts button.edit:hover{background:var(--arakku);color:#fff}
+dialog.edit{border:0;border-radius:var(--radius-lg);padding:0;width:min(560px,94vw);background:var(--paper);color:var(--ink);box-shadow:0 24px 60px rgba(0,0,0,.25)}
+dialog.edit::backdrop{background:rgba(20,10,15,.55)}
+dialog.edit form{padding:28px;max-height:90vh;overflow:auto}
+dialog.edit h2{margin-bottom:18px}
+.edit-photo{display:flex;gap:18px;align-items:center}
+.edit-photo img{width:96px;height:124px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--line);flex-shrink:0}
+.edit-photo label{margin-top:0}
+.edit-photo input[type=file]{max-width:100%;font-size:.9rem}
+.edit-actions{display:flex;gap:12px;margin-top:26px}
+.edit-actions .primary{margin-top:0;flex:1}
+.ghost{padding:14px 22px;border:1px solid var(--line);border-radius:var(--radius-sm);background:transparent;font-weight:600;cursor:pointer}
 .tag{font-size:.82rem}
 .tag.pending{color:var(--warn)} .tag.done{color:var(--ok)} .tag.failed{color:var(--bad)}
 .empty{padding:32px;text-align:center;color:var(--muted);border:2px dashed var(--line);border-radius:var(--radius-lg)}
@@ -204,6 +218,38 @@ td.code{font-family:"Fraunces",serif;font-weight:600;font-size:1.1rem;letter-spa
   </div>
 </main>
 
+<dialog class="edit" id="editDlg" aria-labelledby="editTitle">
+  <form id="editForm">
+    <h2 id="editTitle">Edit saree</h2>
+    <div class="edit-photo">
+      <img id="editImg" alt="">
+      <div>
+        <label for="editPhoto">Replace the photo (optional)</label>
+        <input id="editPhoto" type="file" accept="image/*">
+        <p class="hint">A new photo is read again by the AI, just like a new saree.</p>
+      </div>
+    </div>
+    <label for="eName">Name</label>
+    <input id="eName" type="text" required>
+    <div class="row2">
+      <div><label for="eFabric">Fabric</label><input id="eFabric" type="text"></div>
+      <div><label for="ePrice">Price (₹)</label><input id="ePrice" type="number" min="0" step="1"></div>
+    </div>
+    <label for="eColor">Colour</label>
+    <input id="eColor" type="text">
+    <label for="eBarcode">Barcode</label>
+    <input id="eBarcode" type="text" required>
+    <p class="hint">Change this only if the saree gets a new tag. Tags printed with the old barcode stop working.</p>
+    <label for="eDesc">Notes for the stylist</label>
+    <textarea id="eDesc"></textarea>
+    <div class="edit-actions">
+      <button type="button" class="ghost" id="editCancel">Cancel</button>
+      <button class="primary" id="editSave" type="submit">Save changes</button>
+    </div>
+    <p class="msg" id="editMsg" role="status"></p>
+  </form>
+</dialog>
+
 <script>
 const $ = (s) => document.querySelector(s);
 const store = {
@@ -263,10 +309,66 @@ async function loadStats() {
 let searchTimer;
 $("#search").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadCatalog, 250); });
 
+// ---- Edit a saree: the same details as "Add a saree", already filled in.
+let catalog = new Map();
+const photoVersion = {}; // a replaced photo keeps its URL, so tell the browser to fetch it again
+let editing = null;
+function openEdit(id) {
+  const s = catalog.get(id); if (!s) return;
+  editing = s;
+  $("#editImg").src = withKey(s.image_url) + (photoVersion[s.id] ? "&v=" + photoVersion[s.id] : "");
+  $("#editImg").alt = s.name;
+  $("#eName").value = s.name;
+  $("#eFabric").value = s.fabric || "";
+  $("#ePrice").value = s.price || "";
+  $("#eColor").value = s.color || "";
+  $("#eBarcode").value = s.barcode;
+  $("#eDesc").value = s.description || "";
+  $("#editPhoto").value = "";
+  $("#editMsg").className = "msg"; $("#editMsg").textContent = "";
+  $("#editDlg").showModal();
+  $("#eName").focus();
+}
+$("#editPhoto").addEventListener("change", () => {
+  const f = $("#editPhoto").files[0];
+  if (f) $("#editImg").src = URL.createObjectURL(f);
+});
+$("#editCancel").addEventListener("click", () => $("#editDlg").close());
+$("#editForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const s = editing; if (!s) return;
+  const btn = $("#editSave"), msg = $("#editMsg");
+  const body = {
+    name: $("#eName").value.trim(),
+    fabric: $("#eFabric").value.trim(),
+    color: $("#eColor").value.trim(),
+    description: $("#eDesc").value.trim(),
+    price: Math.max(0, Math.round(Number($("#ePrice").value || 0))),
+  };
+  const barcode = $("#eBarcode").value.trim();
+  if (barcode && barcode !== s.barcode) body.barcode = barcode;
+  btn.disabled = true; btn.textContent = "Saving…"; msg.className = "msg"; msg.textContent = "";
+  try {
+    await api(`/api/sarees/${s.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const photo = $("#editPhoto").files[0];
+    if (photo) {
+      const fd = new FormData(); fd.append("image", photo);
+      await api(`/api/sarees/${s.id}/image`, { method: "PUT", body: fd });
+      photoVersion[s.id] = Date.now();
+    }
+    $("#editDlg").close();
+    loadCatalog();
+  } catch (err) {
+    msg.className = "msg err";
+    msg.textContent = err.message === "unauthorized" ? "" : `Couldn't save: ${err.message}`;
+  } finally { btn.disabled = false; btn.textContent = "Save changes"; }
+});
+
 async function loadCatalog() {
   const q = $("#search").value.trim();
   const list = await api("/api/sarees" + (q ? "?q=" + encodeURIComponent(q) : ""));
   const grid = $("#grid");
+  catalog = new Map(list.map((s) => [s.id, s]));
   if (!q) $("#catCount").textContent = list.length ? `(${list.length})` : "";
   if (!list.length) {
     grid.innerHTML = `<div class="empty">${q ? "No sarees match that search." : "Your catalogue is empty. Add your first saree with the form."}</div>`;
@@ -275,7 +377,7 @@ async function loadCatalog() {
   const label = { pending: "Reading the weave…", done: "Ready for try-on", failed: "Couldn't read the photo. Try a clearer one." };
   grid.innerHTML = list.map((s) => `
     <article class="saree">
-      <div class="ph"><img loading="lazy" src="${withKey(s.image_url)}" alt="${esc(s.name)}"></div>
+      <div class="ph"><img loading="lazy" src="${withKey(s.image_url)}${photoVersion[s.id] ? "&v=" + photoVersion[s.id] : ""}" alt="${esc(s.name)}"></div>
       <div class="body">
         <div class="name">${esc(s.name)}</div>
         <div class="meta">${esc([s.fabric, s.color].filter(Boolean).join(", "))}</div>
@@ -283,6 +385,7 @@ async function loadCatalog() {
         <div class="meta">${esc(s.barcode)}</div>
         <div class="tag ${s.analysis_status}">${label[s.analysis_status] || ""}</div>
         <div class="acts">
+          <button class="edit" data-id="${s.id}">Edit</button>
           <a href="${withKey(s.label_url)}" target="_blank" rel="noopener">Print tag</a>
           <button class="rm" data-id="${s.id}" data-name="${esc(s.name)}">Remove</button>
         </div>
@@ -292,6 +395,8 @@ async function loadCatalog() {
 }
 
 $("#grid").addEventListener("click", async (e) => {
+  const ed = e.target.closest("button.edit");
+  if (ed) { openEdit(ed.dataset.id); return; }
   const b = e.target.closest("button.rm"); if (!b) return;
   if (!confirm(`Remove "${b.dataset.name}" from the catalogue?`)) return;
   await api(`/api/sarees/${b.dataset.id}`, { method: "DELETE" });

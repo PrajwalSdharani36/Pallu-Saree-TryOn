@@ -67,6 +67,7 @@ the ones marked ✓ on every push.
 - Add a saree (photo, name, fabric, price, colour, barcode or auto barcode, notes), AI reads border, pallu and blouse
 - Catalogue and Recent customers on separate tabs (the last tab is remembered)
 - Catalogue with search and a count, printable barcode labels, remove; two per row on a phone
+- Edit a saree: name, fabric, price, colour, barcode (refuses one already in use), stylist notes, and replace the photo (read again by the AI)
 - Recent customers with their shortlists and start time (date shown for older ones), Show more (15 at a time, up to 100)
 
 ## Server
