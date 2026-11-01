@@ -156,7 +156,7 @@ fun TryMoreSheet(
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
-                scanning && onScanTag != null -> TagScanner(scanFront, onScanFront, busy, tagNote, onScanTag, Modifier.align(Alignment.Center))
+                scanning && onScanTag != null -> TagScanner(scanFront, onScanFront, busy, tagNote, onScanTag, Modifier)
                 loading && catalog.isEmpty() -> CircularProgressIndicator(color = ZariLight, modifier = Modifier.align(Alignment.Center))
                 catalog.isEmpty() -> Muted("No sarees in the collection yet.", modifier = Modifier.align(Alignment.Center))
                 else -> LazyVerticalGrid(
@@ -272,8 +272,8 @@ private fun TagScanner(
     modifier: Modifier,
 ) {
     val hasCamera = rememberCameraPermission()
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
-        ScanWindow(Modifier.size(320.dp)) {
+    val camera: @Composable (androidx.compose.ui.unit.Dp) -> Unit = { side ->
+        ScanWindow(Modifier.size(side)) {
             if (hasCamera) {
                 BarcodeScannerView(Modifier.fillMaxSize(), ScanKind.PRODUCT_BARCODES, useFrontCamera = front, onCode = onCode)
             } else {
@@ -285,18 +285,38 @@ private fun TagScanner(
             }
             if (busy) CircularProgressIndicator(color = Color.White, modifier = Modifier.align(Alignment.Center))
         }
-        if (hasCamera) CameraSwitch(front = front, onChange = onFront)
+    }
+    val words: @Composable (TextAlign) -> Unit = { align ->
         Text(
             "Hold the saree's barcode tag up to the camera",
-            fontFamily = Rozha, fontSize = 30.sp, lineHeight = 36.sp, color = OnMirror, textAlign = TextAlign.Center,
+            fontFamily = Rozha, fontSize = 30.sp, lineHeight = 36.sp, color = OnMirror, textAlign = align,
         )
-        Muted("It's added to your looks straight away, with the photo you already took.", scale = 0.85f, align = TextAlign.Center)
+        Muted("It's added to your looks straight away, with the photo you already took.", scale = 0.85f, align = align)
         if (note != null) {
             Text(
                 note,
-                style = MaterialTheme.typography.titleMedium, color = OnMirror, textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium, color = OnMirror, textAlign = align,
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(MirrorRaised2).padding(horizontal = 22.dp, vertical = 12.dp),
             )
+        }
+    }
+    BoxWithConstraints(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        if (maxWidth > maxHeight * 1.3f) {
+            // Landscape: the sheet is short, so the camera sits beside the instructions.
+            val side = minOf(maxHeight - 8.dp, 320.dp).coerceAtLeast(200.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(44.dp), verticalAlignment = Alignment.CenterVertically) {
+                camera(side)
+                Column(Modifier.widthIn(max = 520.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                    words(TextAlign.Start)
+                    if (hasCamera) CameraSwitch(front = front, onChange = onFront)
+                }
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
+                camera(320.dp)
+                if (hasCamera) CameraSwitch(front = front, onChange = onFront)
+                words(TextAlign.Center)
+            }
         }
     }
 }
