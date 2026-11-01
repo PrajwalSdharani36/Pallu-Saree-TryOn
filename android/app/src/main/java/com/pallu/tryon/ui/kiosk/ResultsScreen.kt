@@ -111,7 +111,13 @@ import kotlinx.coroutines.launch
  * everything she can do with this look. Arrows as well as swiping, for customers who don't swipe.
  */
 @Composable
-fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Unit) {
+fun ResultsScreen(
+    vm: KioskViewModel,
+    onRetake: () -> Unit,
+    onFinished: () -> Unit,
+    scanFront: Boolean = true,
+    onScanFront: (Boolean) -> Unit = {},
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     val session = state.session ?: return
     val items = session.items
@@ -124,6 +130,8 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
     var sheet by remember { mutableStateOf<ResultsSheet?>(null) }
     // a look that was just added (new drape, more sarees): swipe to it once it's in the list
     var goTo by remember { mutableStateOf<String?>(null) }
+    // what the tag scanner in "Try more sarees" last told her (unknown tag, already trying it, ...)
+    var tagNote by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(goTo, items.size) {
         val idx = items.indexOfFirst { it.id == goTo }
         if (idx >= 0) {
@@ -250,7 +258,16 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
                     canAdd = MAX_SAREES - items.map { it.saree.id }.distinct().size,
                     busy = state.busy,
                     onAdd = { ids -> vm.addSarees(ids) { id -> goTo = id; sheet = null } },
-                    onClose = { sheet = null },
+                    onClose = { sheet = null; tagNote = null },
+                    scanFront = scanFront,
+                    onScanFront = onScanFront,
+                    onScanTag = { code ->
+                        vm.addByBarcode(code) { id, note ->
+                            tagNote = note
+                            if (id != null) { goTo = id; sheet = null }
+                        }
+                    },
+                    tagNote = tagNote,
                 )
                 ResultsSheet.Done -> DoneSheet(
                     shortlisted = items.filter { it.favorite }.map { it.saree.id }.distinct().size,

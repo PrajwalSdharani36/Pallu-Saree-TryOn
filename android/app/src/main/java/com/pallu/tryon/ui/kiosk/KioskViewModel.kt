@@ -226,6 +226,48 @@ class KioskViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    private var lastTag: Pair<String, Long>? = null
+
+    /**
+     * She scanned a saree's tag at the mirror. [onResult] gets the new look's id when it was added,
+     * or a short message for her (unknown tag, already trying it, her own QR code, ...).
+     */
+    fun addByBarcode(code: String, onResult: (newItemId: String?, message: String?) -> Unit) {
+        val session = _state.value.session ?: return
+        val c = code.trim()
+        if (c.isEmpty() || _state.value.busy) return
+        val now = System.currentTimeMillis()
+        lastTag?.let { (prev, at) -> if (prev == c && now - at < 4000) return } // the camera sees a tag many times a second
+        lastTag = c to now
+        touch()
+        if (c.startsWith("pallu://")) {
+            onResult(null, "That's your try-on code. Hold up the tag on a saree instead.")
+            return
+        }
+        val before = session.items.map { it.id }.toSet()
+        _state.update { it.copy(busy = true, error = null) }
+        viewModelScope.launch {
+            val repo = container.repository()
+            runCatching { repo.api.addItem(session.id, AddItemBody(barcode = c)) }
+                .onSuccess { s ->
+                    _state.update { it.copy(session = s, busy = false) }
+                    startPolling()
+                    val added = s.items.firstOrNull { it.id !in before }
+                    if (added != null) {
+                        onResult(added.id, null)
+                    } else {
+                        val same = s.items.firstOrNull { it.saree.barcode == c }
+                        onResult(null, if (same != null) "You're already trying ${same.saree.name}." else "Couldn't add that saree.")
+                    }
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(busy = false) }
+                    val notFound = (e as? retrofit2.HttpException)?.code() == 404
+                    onResult(null, if (notFound) "We couldn't find that tag. Please ask our staff." else repo.describe(e))
+                }
+        }
+    }
+
     /** Add sarees to this customer's try-on; they're draped with the photo she already took. */
     fun addSarees(ids: List<String>, onAdded: (firstNewItemId: String?) -> Unit) {
         val session = _state.value.session ?: return

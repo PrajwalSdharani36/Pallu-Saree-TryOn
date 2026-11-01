@@ -167,6 +167,8 @@ private fun Graph(
             KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }, light = settings.kioskLight, onToggleLight = toggleLight) {
                 ConsentScreen(
                     vm = kioskVm,
+                    scanFront = settings.scanFront,
+                    onScanFront = { front -> scope.launch { container.settingsStore.setCameras(scanFront = front) } },
                     onBack = { kioskVm.reset(); goRoot(Routes.KIOSK) },
                     onContinue = {
                         val gift = kioskVm.state.value.mode == TryOnMode.GIFT
@@ -200,6 +202,8 @@ private fun Graph(
             KioskFrame(kioskVm, settings.kioskIdleSeconds, onIdle = { goRoot(Routes.KIOSK) }, light = settings.kioskLight, onToggleLight = toggleLight) {
                 ResultsScreen(
                     vm = kioskVm,
+                    scanFront = settings.scanFront,
+                    onScanFront = { front -> scope.launch { container.settingsStore.setCameras(scanFront = front) } },
                     onRetake = { nav.navigate(Routes.KIOSK_CAPTURE) },
                     onFinished = { nav.navigate(Routes.KIOSK_THANKS) { popUpTo(Routes.KIOSK) } },
                 )

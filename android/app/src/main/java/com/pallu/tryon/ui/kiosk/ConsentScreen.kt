@@ -76,12 +76,19 @@ import com.pallu.tryon.ui.theme.ZariLight
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit) {
+fun ConsentScreen(
+    vm: KioskViewModel,
+    onBack: () -> Unit,
+    onContinue: () -> Unit,
+    scanFront: Boolean = true,
+    onScanFront: (Boolean) -> Unit = {},
+) {
     val state by vm.state.collectAsStateWithLifecycle()
     val session = state.session ?: return
     val drape = DRAPES.firstOrNull { it.id == state.drapeStyle } ?: DRAPES.first()
     // No sarees scanned (staff handed over a "choose on the mirror" QR), or she wants to add more.
     var choosing by remember { mutableStateOf(false) }
+    var tagNote by remember { mutableStateOf<String?>(null) }
     val openCollection = { vm.loadCatalog(); choosing = true }
 
     KioskPage(ambient = session.items.firstOrNull()?.saree?.imageUrl) {
@@ -250,7 +257,16 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
                     canAdd = 12 - session.items.map { it.saree.id }.distinct().size,
                     busy = state.busy,
                     onAdd = { ids -> vm.addSarees(ids) { choosing = false } },
-                    onClose = { choosing = false },
+                    onClose = { choosing = false; tagNote = null },
+                    scanFront = scanFront,
+                    onScanFront = onScanFront,
+                    onScanTag = { code ->
+                        vm.addByBarcode(code) { id, note ->
+                            tagNote = note
+                            if (id != null) choosing = false
+                        }
+                    },
+                    tagNote = tagNote,
                     title = if (session.items.isEmpty()) "Choose your sarees" else "Add more sarees",
                 )
             }

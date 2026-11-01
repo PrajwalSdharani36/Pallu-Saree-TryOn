@@ -1,5 +1,16 @@
 package com.pallu.tryon.ui.kiosk
 
+import com.pallu.tryon.ui.theme.Primary
+import com.pallu.tryon.ui.theme.OnPrimary
+import com.pallu.tryon.ui.common.rememberCameraPermission
+import com.pallu.tryon.ui.common.ScanKind
+import com.pallu.tryon.ui.common.BarcodeScannerView
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -120,15 +131,32 @@ fun TryMoreSheet(
     onAdd: (List<String>) -> Unit,
     onClose: () -> Unit,
     title: String = "Try more sarees",
+    scanFront: Boolean = true,
+    onScanFront: (Boolean) -> Unit = {},
+    onScanTag: ((String) -> Unit)? = null,
+    tagNote: String? = null,
 ) {
     val picked = remember { mutableStateListOf<String>() }
+    // Two ways to add: tap sarees in the collection, or hold a saree's tag up to the camera.
+    var scanning by remember { mutableStateOf(false) }
     MirrorSheet(onClose, tall = true, maxWidth = 1100.dp) {
         SheetTitle(
             title,
-            "Pick from our collection, or ask our staff to scan the tag of any saree. It will appear here on its own.",
+            if (onScanTag != null) "Pick from our collection, or scan the tag on a saree you're holding."
+            else "Pick from our collection, or ask our staff to scan the tag of any saree. It will appear here on its own.",
         )
+        if (onScanTag != null) {
+            Row(
+                Modifier.clip(RoundedCornerShape(50)).background(MirrorRaised2).padding(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                ModePill("Our collection", Icons.Filled.GridView, selected = !scanning) { scanning = false }
+                ModePill("Scan a tag", Icons.Filled.QrCodeScanner, selected = scanning) { scanning = true }
+            }
+        }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
+                scanning && onScanTag != null -> TagScanner(scanFront, onScanFront, busy, tagNote, onScanTag, Modifier.align(Alignment.Center))
                 loading && catalog.isEmpty() -> CircularProgressIndicator(color = ZariLight, modifier = Modifier.align(Alignment.Center))
                 catalog.isEmpty() -> Muted("No sarees in the collection yet.", modifier = Modifier.align(Alignment.Center))
                 else -> LazyVerticalGrid(
@@ -153,6 +181,11 @@ fun TryMoreSheet(
         Row(verticalAlignment = Alignment.CenterVertically) {
             QuietButton("Close", onClose)
             Spacer(Modifier.width(12.dp))
+            if (scanning) {
+                Spacer(Modifier.weight(1f))
+                OutlineButton("Back to our collection", { scanning = false })
+                return@Row
+            }
             Muted(
                 when {
                     canAdd <= 0 -> "That's the most sarees for one try-on."
@@ -208,6 +241,63 @@ private fun CatalogCard(s: Saree, trying: Boolean, picked: Boolean, enabled: Boo
             maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.heightIn(min = 44.dp),
         )
         if (s.price > 0) Text(rupees(s.price), style = MaterialTheme.typography.bodyMedium, color = OnMirrorMuted)
+    }
+}
+
+@Composable
+private fun ModePill(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .heightIn(min = 54.dp)
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) Primary else Color.Transparent)
+            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = if (selected) OnPrimary else OnMirror, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(label, style = MaterialTheme.typography.titleMedium, color = if (selected) OnPrimary else OnMirror)
+    }
+}
+
+/** Camera window for saree tags, with the same Front / Back choice as the welcome screen's QR camera. */
+@Composable
+private fun TagScanner(
+    front: Boolean,
+    onFront: (Boolean) -> Unit,
+    busy: Boolean,
+    note: String?,
+    onCode: (String) -> Unit,
+    modifier: Modifier,
+) {
+    val hasCamera = rememberCameraPermission()
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
+        ScanWindow(Modifier.size(320.dp)) {
+            if (hasCamera) {
+                BarcodeScannerView(Modifier.fillMaxSize(), ScanKind.PRODUCT_BARCODES, useFrontCamera = front, onCode = onCode)
+            } else {
+                Text(
+                    "Camera is off. Ask our staff to scan the tag.",
+                    color = Color.White, textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center).padding(20.dp),
+                )
+            }
+            if (busy) CircularProgressIndicator(color = Color.White, modifier = Modifier.align(Alignment.Center))
+        }
+        if (hasCamera) CameraSwitch(front = front, onChange = onFront)
+        Text(
+            "Hold the saree's barcode tag up to the camera",
+            fontFamily = Rozha, fontSize = 30.sp, lineHeight = 36.sp, color = OnMirror, textAlign = TextAlign.Center,
+        )
+        Muted("It's added to your looks straight away, with the photo you already took.", scale = 0.85f, align = TextAlign.Center)
+        if (note != null) {
+            Text(
+                note,
+                style = MaterialTheme.typography.titleMedium, color = OnMirror, textAlign = TextAlign.Center,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(MirrorRaised2).padding(horizontal = 22.dp, vertical = 12.dp),
+            )
+        }
     }
 }
 
