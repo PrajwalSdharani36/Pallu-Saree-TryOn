@@ -1,0 +1,41 @@
+Physical size: 1200x2000
+
+com.pallu.tryon.MirrorWalkthroughTest:s_glBindAttribLocation: bind attrib 0 name position
+s_glBindAttribLocation: bind attrib 1 name localCoord
+.
+
+Time: 426.702
+
+OK (1 test)
+
+
+
+com.pallu.tryon.MirrorWalkthroughTest:s_glBindAttribLocation: bind attrib 0 name position
+s_glBindAttribLocation: bind attrib 1 name localCoord
+.
+
+Time: 198.744
+
+OK (1 test)
+
+
+
+com.pallu.tryon.MirrorWalkthroughTest:s_glBindAttribLocation: bind attrib 0 name position
+s_glBindAttribLocation: bind attrib 1 name localCoord
+.
+
+Time: 320.353
+
+OK (1 test)
+
+
+
+com.pallu.tryon.MirrorWalkthroughTest:s_glBindAttribLocation: bind attrib 0 name position
+s_glBindAttribLocation: bind attrib 1 name localCoord
+.
+
+Time: 32.194
+
+OK (1 test)
+
+

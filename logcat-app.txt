@@ -1,0 +1,36 @@
+145:11-01 07:05:28.442  2029  2029 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+146:11-01 07:05:28.444  2029  2029 I AndroidRuntime: Using default boot image
+147:11-01 07:05:28.444  2029  2029 I AndroidRuntime: Leaving lock profiling enabled
+175:11-01 07:05:28.530  2029  2029 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+914:11-01 07:05:32.963  2072  2072 D CameraX : QuirkSettings from app metadata: null
+915:11-01 07:05:32.963  2072  2072 D CameraX : QuirkSettings by default: QuirkSettings{enabledWhenDeviceHasQuirk=true, forceEnabledQuirks=[], forceDisabledQuirks=[]}
+2797:11-01 07:08:35.524  2072  2259 W com.pallu.tryo: Long monitor contention with owner CameraX-core_camera_1 (2185) at void android.hardware.camera2.impl.CameraDeviceImpl.close()(CameraDeviceImpl.java:1372) waiters=0 in void android.hardware.camera2.impl.CameraDeviceImpl$CameraDeviceCallbacks.onCaptureStarted(android.hardware.camera2.impl.CaptureResultExtras, long) for 771ms
+5152:11-01 07:12:37.090  2029  2029 I AndroidRuntime: VM exiting with result code 0.
+5191:11-01 07:12:37.267  2370  2370 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+5192:11-01 07:12:37.269  2370  2370 I AndroidRuntime: Using default boot image
+5193:11-01 07:12:37.269  2370  2370 I AndroidRuntime: Leaving lock profiling enabled
+5202:11-01 07:12:37.346  2370  2370 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+5304:11-01 07:12:40.998  2386  2386 D CameraX : QuirkSettings from app metadata: null
+5305:11-01 07:12:40.999  2386  2386 D CameraX : QuirkSettings by default: QuirkSettings{enabledWhenDeviceHasQuirk=true, forceEnabledQuirks=[], forceDisabledQuirks=[]}
+5976:11-01 07:14:26.730  2386  2398 W com.pallu.tryo: Long monitor contention with owner CameraX-core_camera_1 (2428) at void android.hardware.camera2.impl.CameraDeviceImpl.close()(CameraDeviceImpl.java:1372) waiters=0 in void android.hardware.camera2.impl.CameraDeviceImpl$CameraDeviceCallbacks.onCaptureStarted(android.hardware.camera2.impl.CaptureResultExtras, long) for 157ms
+6452:11-01 07:14:42.993  2386  2398 W com.pallu.tryo: Long monitor contention with owner CameraX-core_camera_0 (2427) at void android.hardware.camera2.impl.CameraDeviceImpl.close()(CameraDeviceImpl.java:1372) waiters=0 in void android.hardware.camera2.impl.CameraDeviceImpl$CameraDeviceCallbacks.onCaptureStarted(android.hardware.camera2.impl.CaptureResultExtras, long) for 560ms
+6990:11-01 07:15:25.890  2386  2414 W com.pallu.tryo: Long monitor contention with owner CameraX-core_camera_1 (2428) at void android.hardware.camera2.impl.CameraDeviceImpl.close()(CameraDeviceImpl.java:1372) waiters=0 in void android.hardware.camera2.impl.CameraDeviceImpl$CameraDeviceCallbacks.onCaptureStarted(android.hardware.camera2.impl.CaptureResultExtras, long) for 867ms
+7541:11-01 07:15:57.163  2370  2370 I AndroidRuntime: VM exiting with result code 0.
+7591:11-01 07:15:57.365  2514  2514 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+7592:11-01 07:15:57.369  2514  2514 I AndroidRuntime: Using default boot image
+7593:11-01 07:15:57.369  2514  2514 I AndroidRuntime: Leaving lock profiling enabled
+7606:11-01 07:15:57.442  2514  2514 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+7859:11-01 07:16:02.099  2528  2528 D CameraX : QuirkSettings from app metadata: null
+7860:11-01 07:16:02.100  2528  2528 D CameraX : QuirkSettings by default: QuirkSettings{enabledWhenDeviceHasQuirk=true, forceEnabledQuirks=[], forceDisabledQuirks=[]}
+8321:11-01 07:17:17.896  2528  2528 W com.pallu.tryo: Long monitor contention with owner CameraX-camerax_high_priority (2618) at androidx.camera.core.ImageProxy androidx.camera.core.AndroidImageReaderProxy.acquireLatestImage()(AndroidImageReaderProxy.java:76) waiters=0 in void androidx.camera.core.AndroidImageReaderProxy.lambda$setOnImageAvailableListener$1$androidx-camera-core-AndroidImageReaderProxy(java.util.concurrent.Executor, androidx.camera.core.impl.ImageReaderProxy$OnImageAvailableListener, android.media.ImageReader) for 103ms
+9004:11-01 07:18:16.410  2528  2648 W com.pallu.tryo: Long monitor contention with owner CameraX-core_camera_1 (2601) at void android.hardware.camera2.impl.CameraDeviceImpl.close()(CameraDeviceImpl.java:1372) waiters=0 in void android.hardware.camera2.impl.CameraDeviceImpl$CameraDeviceCallbacks.onResultReceived(android.hardware.camera2.impl.CameraMetadataNative, android.hardware.camera2.impl.CaptureResultExtras, android.hardware.camera2.impl.PhysicalCaptureResultInfo[]) for 348ms
+9489:11-01 07:18:58.318  2528  2541 W com.pallu.tryo: Long monitor contention with owner CameraX-core_camera_0 (2600) at void android.hardware.camera2.impl.CameraDeviceImpl.close()(CameraDeviceImpl.java:1372) waiters=0 in void android.hardware.camera2.impl.CameraDeviceImpl$CameraDeviceCallbacks.onCaptureStarted(android.hardware.camera2.impl.CaptureResultExtras, long) for 518ms
+10898:11-01 07:20:48.651  2528  2528 W com.pallu.tryo: Long monitor contention with owner CameraX-camerax_high_priority (2618) at androidx.camera.core.ImageProxy androidx.camera.core.AndroidImageReaderProxy.acquireLatestImage()(AndroidImageReaderProxy.java:76) waiters=0 in void androidx.camera.core.AndroidImageReaderProxy.lambda$setOnImageAvailableListener$1$androidx-camera-core-AndroidImageReaderProxy(java.util.concurrent.Executor, androidx.camera.core.impl.ImageReaderProxy$OnImageAvailableListener, android.media.ImageReader) for 125ms
+11259:11-01 07:21:18.957  2514  2514 I AndroidRuntime: VM exiting with result code 0.
+11324:11-01 07:21:19.977  2727  2727 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11325:11-01 07:21:19.994  2727  2727 I AndroidRuntime: Using default boot image
+11326:11-01 07:21:19.996  2727  2727 I AndroidRuntime: Leaving lock profiling enabled
+11361:11-01 07:21:20.267  2727  2727 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+11538:11-01 07:21:28.318  2742  2742 D CameraX : QuirkSettings from app metadata: null
+11539:11-01 07:21:28.318  2742  2742 D CameraX : QuirkSettings by default: QuirkSettings{enabledWhenDeviceHasQuirk=true, forceEnabledQuirks=[], forceDisabledQuirks=[]}
+16409:11-01 07:21:53.005  2727  2727 I AndroidRuntime: VM exiting with result code 0.
