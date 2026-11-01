@@ -151,6 +151,11 @@ class MirrorWalkthroughTest {
         // one more saree from the collection, with the same photo
         tapText("Try more sarees")
         find(By.textContains("Pick from our collection"), 15_000)
+        // or scan a saree's tag at the mirror (the emulator's camera can't show a real tag, so just look)
+        tapText("Scan a tag")
+        find(By.textContains("Hold the saree's barcode tag"))
+        shot("13d0_scan_tag", settle = 2000)
+        tapText("Our collection")
         tapText("Ivory Kasavu, Kerala")
         shot("13d_try_more", settle = 1500)
         find(By.text("Try this saree")).click()

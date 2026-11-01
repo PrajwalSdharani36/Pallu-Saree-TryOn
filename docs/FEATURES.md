@@ -48,6 +48,7 @@ the ones marked ✓ on every push.
 - ✓ Failed look: "Try again"
 - ✓ Change drape on a finished look: a new look of the same saree in another drape, next to the original; drapes already made say "See it"
 - ✓ Try more sarees: the store's collection, pick several, draped with the same photo ("Already trying" marked; limit 12 sarees)
+- ✓ Scan a tag (in Try more sarees, and before the photo): hold a saree's barcode tag up to the tablet camera (Front/Back) and it's added; clear notes for an unknown tag, a saree already being tried, or her own QR code
 - Sarees the staff scan in from their phone appear on their own
 - ✓ Retake photo
 - ✓ I'm done → "All done?": shortlist count, Keep looking, Try more sarees, Yes I'm done
