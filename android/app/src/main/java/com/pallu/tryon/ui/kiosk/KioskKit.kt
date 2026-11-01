@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -179,6 +180,9 @@ fun GoldButton(
     icon: ImageVector? = null,
     enabled: Boolean = true,
 ) {
+    // Rebuilt when its label changes ("Pick sarees to try" -> "Try this saree"): otherwise Android's
+    // accessibility tree can keep announcing the old words, for screen readers and the walkthrough alike.
+    key(text) {
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -197,6 +201,7 @@ fun GoldButton(
             Spacer(Modifier.width(12.dp))
         }
         Text(text, style = MaterialTheme.typography.titleLarge)
+    }
     }
 }
 
