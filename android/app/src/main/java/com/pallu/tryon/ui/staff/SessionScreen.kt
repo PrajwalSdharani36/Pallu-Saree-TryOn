@@ -145,7 +145,11 @@ fun SessionScreen(
                         val liked = s.items.count { it.favorite }
                         Text(
                             buildString {
-                                if (s.hasPhoto) append("${s.done} of ${s.total} ready") else append("${s.total} sarees")
+                                when {
+                                    s.total == 0 -> append("Choosing on the mirror")
+                                    s.hasPhoto -> append("${s.done} of ${s.total} ready")
+                                    else -> append("${s.total} sarees")
+                                }
                                 if (liked > 0) append(", $liked liked")
                             },
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -44,6 +44,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +80,9 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
     val state by vm.state.collectAsStateWithLifecycle()
     val session = state.session ?: return
     val drape = DRAPES.firstOrNull { it.id == state.drapeStyle } ?: DRAPES.first()
+    // No sarees scanned (staff handed over a "choose on the mirror" QR), or she wants to add more.
+    var choosing by remember { mutableStateOf(false) }
+    val openCollection = { vm.loadCatalog(); choosing = true }
 
     KioskPage(ambient = session.items.firstOrNull()?.saree?.imageUrl) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -82,19 +90,27 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
             val wide = maxWidth > maxHeight
             Column(Modifier.fillMaxSize()) {
                 val greeting: @Composable () -> Unit = {
-                        Column(Modifier.padding(end = ThemeSwitchRoom - KioskSide), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            val name = session.customerLabel.takeIf { it.isNotBlank() && !it.startsWith("Token", ignoreCase = true) }
-                            Text(
-                                if (name != null) "Namaste, $name." else "Namaste.",
-                                fontFamily = Rozha, fontSize = (64 * k).sp, lineHeight = (70 * k).sp, color = OnMirror,
-                            )
-                            Muted(
-                                "You picked ${session.total} ${if (session.total == 1) "saree" else "sarees"}. We'll show you wearing each one.",
-                                scale = k,
-                            )
-                        }
+                    Column(Modifier.padding(end = ThemeSwitchRoom - KioskSide), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val name = session.customerLabel.takeIf { it.isNotBlank() && !it.startsWith("Token", ignoreCase = true) }
+                        Text(
+                            if (name != null) "Namaste, $name." else "Namaste.",
+                            fontFamily = Rozha, fontSize = (64 * k).sp, lineHeight = (70 * k).sp, color = OnMirror,
+                        )
+                        Muted(
+                            if (session.total == 0) "Choose the sarees you'd like to see on you. It only takes a moment."
+                            else "You picked ${session.total} ${if (session.total == 1) "saree" else "sarees"}. We'll show you wearing each one.",
+                            scale = k,
+                        )
+                    }
                 }
                 val picked: @Composable () -> Unit = {
+                    if (session.items.isEmpty()) {
+                        GlassColumn(Modifier.fillMaxWidth(), spacing = 18.dp) {
+                            Text("Choose your sarees", fontFamily = Rozha, fontSize = 32.sp, lineHeight = 38.sp, color = OnMirror)
+                            Muted("Pick as many as you like from our collection. You can add more after your photo too.", scale = 0.9f)
+                            GoldButton("Choose from our collection", onClick = openCollection, icon = Icons.Filled.Add)
+                        }
+                    } else {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(18.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
                             items(session.items, key = { it.id }) { item ->
                                 Column(Modifier.width(118.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -109,63 +125,76 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
                                     )
                                 }
                             }
-                        }
-                }
-                val whoSection: @Composable () -> Unit = {
-                        GlassColumn(Modifier.fillMaxWidth(), spacing = 22.dp) {
-                            StepHeader(1, "Who is trying them on?")
-                            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                                ChoiceCard(
-                                    Icons.Outlined.Person, "Me", "Stand in front of the mirror for one photo.",
-                                    state.mode == TryOnMode.SELF, { vm.setMode(TryOnMode.SELF) }, Modifier.weight(1f),
-                                )
-                                ChoiceCard(
-                                    Icons.Outlined.CardGiftcard, "Someone else", "Send our staff a photo of them. Good for gifts.",
-                                    state.mode == TryOnMode.GIFT, { vm.setMode(TryOnMode.GIFT) }, Modifier.weight(1f),
-                                )
-                            }
-                        }
-                }
-                val drapeSection: @Composable () -> Unit = {
-                        GlassColumn(Modifier.fillMaxWidth(), spacing = 20.dp) {
-                            StepHeader(2, "How should it be draped?")
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                DRAPES.forEach { d -> DrapePill(d.label, d.id == state.drapeStyle) { vm.setDrape(d.id) } }
-                            }
-                            Muted(drape.description, scale = 0.9f)
-                        }
-                }
-                val permissionSection: @Composable () -> Unit = {
-                        if (state.mode != null) {
-                            val text = if (state.mode == TryOnMode.GIFT) {
-                                "I have this person's permission to use their photo. It is only used to show these sarees, " +
-                                    "and is deleted when I finish or after ${session.photoTtlMinutes} minutes."
-                            } else {
-                                "I agree to a photo being taken to show me these sarees. My photo and the looks are deleted " +
-                                    "when I finish or after ${session.photoTtlMinutes} minutes, and are not used for anything else."
-                            }
-                            GlassColumn(Modifier.fillMaxWidth(), spacing = 18.dp) {
-                                StepHeader(3, "Your permission")
-                                Row(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(22.dp))
-                                        .background(if (state.consent) ZariLight.copy(alpha = 0.14f) else Color.Transparent)
-                                        .border(if (state.consent) 2.dp else 1.dp, if (state.consent) ZariLight else GlassLine, RoundedCornerShape(22.dp))
-                                        .toggleable(value = state.consent, onValueChange = vm::setConsent, role = Role.Checkbox)
-                                        .padding(20.dp),
-                                    verticalAlignment = Alignment.Top,
+                            item(key = "add") {
+                                Column(
+                                    Modifier.size(118.dp, 150.dp).clip(RoundedCornerShape(20.dp)).background(Glass)
+                                        .border(1.5.dp, ZariLight.copy(alpha = 0.7f), RoundedCornerShape(20.dp))
+                                        .clickable(onClickLabel = "Add more sarees", onClick = openCollection),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                                 ) {
-                                    Checkbox(
-                                        checked = state.consent, onCheckedChange = null,
-                                        colors = CheckboxDefaults.colors(checkedColor = ZariLight, checkmarkColor = OnGold, uncheckedColor = OnMirrorMuted),
-                                        modifier = Modifier.scale(1.3f).padding(top = 4.dp),
-                                    )
-                                    Spacer(Modifier.width(18.dp))
-                                    Text(text, style = MaterialTheme.typography.bodyLarge, color = OnMirror)
+                                    Icon(Icons.Filled.Add, contentDescription = null, tint = ZariLight, modifier = Modifier.size(30.dp))
+                                    Text("Add more", style = MaterialTheme.typography.titleSmall, color = ZariLight)
                                 }
                             }
                         }
+                    }
+                }
+                val whoSection: @Composable () -> Unit = {
+                    GlassColumn(Modifier.fillMaxWidth(), spacing = 22.dp) {
+                        StepHeader(1, "Who is trying them on?")
+                        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                            ChoiceCard(
+                                Icons.Outlined.Person, "Me", "Stand in front of the mirror for one photo.",
+                                state.mode == TryOnMode.SELF, { vm.setMode(TryOnMode.SELF) }, Modifier.weight(1f),
+                            )
+                            ChoiceCard(
+                                Icons.Outlined.CardGiftcard, "Someone else", "Send our staff a photo of them. Good for gifts.",
+                                state.mode == TryOnMode.GIFT, { vm.setMode(TryOnMode.GIFT) }, Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+                val drapeSection: @Composable () -> Unit = {
+                    GlassColumn(Modifier.fillMaxWidth(), spacing = 20.dp) {
+                        StepHeader(2, "How should it be draped?")
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            DRAPES.forEach { d -> DrapePill(d.label, d.id == state.drapeStyle) { vm.setDrape(d.id) } }
+                        }
+                        Muted(drape.description, scale = 0.9f)
+                    }
+                }
+                val permissionSection: @Composable () -> Unit = {
+                    if (state.mode != null) {
+                        val text = if (state.mode == TryOnMode.GIFT) {
+                            "I have this person's permission to use their photo. It is only used to show these sarees, " +
+                                "and is deleted when I finish or after ${session.photoTtlMinutes} minutes."
+                        } else {
+                            "I agree to a photo being taken to show me these sarees. My photo and the looks are deleted " +
+                                "when I finish or after ${session.photoTtlMinutes} minutes, and are not used for anything else."
+                        }
+                        GlassColumn(Modifier.fillMaxWidth(), spacing = 18.dp) {
+                            StepHeader(3, "Your permission")
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(22.dp))
+                                    .background(if (state.consent) ZariLight.copy(alpha = 0.14f) else Color.Transparent)
+                                    .border(if (state.consent) 2.dp else 1.dp, if (state.consent) ZariLight else GlassLine, RoundedCornerShape(22.dp))
+                                    .toggleable(value = state.consent, onValueChange = vm::setConsent, role = Role.Checkbox)
+                                    .padding(20.dp),
+                                verticalAlignment = Alignment.Top,
+                            ) {
+                                Checkbox(
+                                    checked = state.consent, onCheckedChange = null,
+                                    colors = CheckboxDefaults.colors(checkedColor = ZariLight, checkmarkColor = OnGold, uncheckedColor = OnMirrorMuted),
+                                    modifier = Modifier.scale(1.3f).padding(top = 4.dp),
+                                )
+                                Spacer(Modifier.width(18.dp))
+                                Text(text, style = MaterialTheme.typography.bodyLarge, color = OnMirror)
+                            }
+                        }
+                    }
                 }
                 if (wide) {
                     // landscape: two columns, so the drape and permission are on screen without scrolling
@@ -196,6 +225,10 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
                 ) {
                     OutlineButton("Cancel", onBack)
                     Spacer(Modifier.weight(1f))
+                    if (session.total == 0) {
+                        Text("Choose a saree first", style = MaterialTheme.typography.bodyMedium, color = OnMirrorMuted)
+                        Spacer(Modifier.width(18.dp))
+                    }
                     // keyed by the choice so the button is rebuilt, not relabelled: screen readers (and
                     // the walkthrough) otherwise keep hearing the old "Take my photo"
                     key(state.mode) {
@@ -203,11 +236,23 @@ fun ConsentScreen(vm: KioskViewModel, onBack: () -> Unit, onContinue: () -> Unit
                             text = if (state.mode == TryOnMode.GIFT) "Continue" else "Take my photo",
                             icon = if (state.mode == TryOnMode.GIFT) Icons.Filled.PhotoLibrary else Icons.Filled.PhotoCamera,
                             onClick = onContinue,
-                            enabled = state.mode != null && state.consent,
+                            enabled = state.mode != null && state.consent && session.total > 0,
                             modifier = Modifier.widthIn(min = 300.dp),
                         )
                     }
                 }
+            }
+            if (choosing) {
+                TryMoreSheet(
+                    catalog = state.catalog,
+                    loading = state.catalogLoading,
+                    alreadyTrying = session.items.map { it.saree.id }.toSet(),
+                    canAdd = 12 - session.items.map { it.saree.id }.distinct().size,
+                    busy = state.busy,
+                    onAdd = { ids -> vm.addSarees(ids) { choosing = false } },
+                    onClose = { choosing = false },
+                    title = if (session.items.isEmpty()) "Choose your sarees" else "Add more sarees",
+                )
             }
         }
     }

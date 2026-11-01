@@ -100,7 +100,7 @@ On first launch, enter the server address (for example `192.168.1.20:8000`, the 
 ## The store flow
 
 1. **Add sarees** on the admin page: one photo of the folded saree with the pallu and border visible, plus a name and price. No barcode on the saree? Leave the field empty and click **Print tag**.
-2. **Staff phone**: tap *Scan a new customer's sarees*, scan each tag, then *Create QR code*.
+2. **Staff phone**: tap *Scan a new customer's sarees*, scan each tag, then *Create QR code*. Scanning is optional: with no tags scanned the button reads *Create QR code to choose on the mirror*, and the customer picks from the collection on the mirror. The QR is the customer's ticket either way (it keeps the AI cost under the store's control, links the customer to the staff phone, and ties the photo to one visit).
 3. **Mirror**: the customer shows the QR (or types the 6-letter code), chooses *Me* or *Someone else*, picks a drape style (Nivi, Bengali, Gujarati, Nauvari, Modern) and agrees to the photo.
 4. **Me:** a 4-second countdown takes one full-length photo.
    **Someone else (gift):** the mirror asks the customer to WhatsApp a photo of the person to the staff member. The staff member taps **Add photo** on that customer's QR screen and confirms permission, and the looks start on the mirror automatically.

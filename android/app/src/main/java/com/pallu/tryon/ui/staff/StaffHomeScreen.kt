@@ -69,7 +69,8 @@ fun StaffHomeScreen(
                 item {
                     Column(Modifier.widthIn(max = 640.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                         Text(
-                            "When a customer has picked their sarees, scan the tags and hand them the QR code for the mirror.",
+                            "Scan the tags of the sarees a customer picked and hand them the QR code for the mirror. " +
+                                "No time to scan? Create the QR code anyway and they choose sarees on the mirror.",
                             style = MaterialTheme.typography.bodyLarge,
                         )
                         BigButton("Scan a new customer's sarees", onNewCustomer, Modifier.fillMaxWidth())
@@ -111,7 +112,11 @@ private fun SessionRow(s: TryOnSession, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    "${statusWords(s.status)}. ${s.total} sarees.",
+                    "${statusWords(s.status)}. " + when (s.total) {
+                        0 -> "Choosing sarees on the mirror."
+                        1 -> "1 saree."
+                        else -> "${s.total} sarees."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

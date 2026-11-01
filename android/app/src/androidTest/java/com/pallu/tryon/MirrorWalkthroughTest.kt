@@ -60,6 +60,7 @@ class MirrorWalkthroughTest {
     fun tabletPortrait() = walk("tab-portrait_") {
         device.setOrientationNatural()
         mirrorVisit()
+        browseVisit()
         giftVisit()
         setupScreen()
     }
@@ -166,6 +167,36 @@ class MirrorWalkthroughTest {
         shot("14_thank_you", settle = 2500)
         find(By.textStartsWith("Start over")).click()
         find(By.textContains("Show the QR code"), 20_000)
+    }
+
+    /** Staff hand over a QR without scanning anything: the customer chooses her sarees on the mirror. */
+    private fun browseVisit() {
+        configure(AppMode.KIOSK)
+        val s = newSession("Kavya")
+        launch()
+        find(By.textContains("Show the QR code"), 20_000)
+        typeCode(s.code)
+        tapText("Start")
+        find(By.textContains("Choose the sarees you'd like"))
+        shot("16_choose_first", settle = 1500)
+        tapText("Choose from our collection")
+        find(By.textContains("Pick from our collection"), 15_000)
+        clickRetry(By.text("Ivory Kasavu, Kerala"))
+        clickRetry(By.text("Rani pink Bandhani"))
+        tapText("Try these 2")
+        find(By.textContains("You picked 2 sarees"), 15_000)
+        shot("17_chosen", settle = 1500)
+        clickRetry(By.textContains("Stand in front of the mirror"))
+        clickRetry(By.textContains("I agree to a photo"))
+        tapText("Take my photo")
+        find(By.textContains("Take my photo in"), 20_000).click()
+        find(By.textContains("Use this photo"), 25_000).click()
+        find(By.text("Your looks"), 20_000)
+        findLook(60_000)
+        shot("18_browse_look")
+        tapText("I'm done")
+        tapText("Yes, I'm done")
+        find(By.text("Thank you"), 20_000)
     }
 
     private fun giftVisit() {

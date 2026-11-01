@@ -119,11 +119,12 @@ fun TryMoreSheet(
     busy: Boolean,
     onAdd: (List<String>) -> Unit,
     onClose: () -> Unit,
+    title: String = "Try more sarees",
 ) {
     val picked = remember { mutableStateListOf<String>() }
     MirrorSheet(onClose, tall = true, maxWidth = 1100.dp) {
         SheetTitle(
-            "Try more sarees",
+            title,
             "Pick from our collection, or ask our staff to scan the tag of any saree. It will appear here on its own.",
         )
         Box(Modifier.weight(1f).fillMaxWidth()) {

@@ -231,3 +231,29 @@ def test_old_database_gets_new_columns(tmp_path, monkeypatch):
     finally:
         db.reset_engine()
         config.get_settings.cache_clear()
+
+
+def test_browse_on_the_mirror_without_scanning(client):
+    """Staff hand over a QR with no sarees; the customer picks them on the mirror, then takes her photo."""
+    add_saree(client, "A", "A1")
+    b = add_saree(client, "B", "B2")
+    sess = client.post("/api/sessions", json={"customer_label": "Kavya"}).json()
+    assert sess["total"] == 0 and sess["status"] == "open"
+    # picked on the mirror before the photo: waiting, not drafted yet
+    s = client.post(f"/api/sessions/{sess['code']}/items", json={"saree_id": b["id"]}).json()
+    assert s["total"] == 1 and s["items"][0]["status"] == "pending"
+    client.post(f"/api/sessions/{sess['id']}/photo", data={"consent": "true"},
+                files={"photo": ("p.jpg", make_jpeg(), "image/jpeg")})
+    done = wait_for(client, sess["id"], lambda s: s["status"] == "ready")
+    assert done["done"] == 1
+
+
+def test_photo_before_any_saree_is_ready_and_waits(client):
+    add_saree(client, "A", "A1")
+    sess = client.post("/api/sessions", json={}).json()
+    s = client.post(f"/api/sessions/{sess['id']}/photo", data={"consent": "true"},
+                    files={"photo": ("p.jpg", make_jpeg(), "image/jpeg")}).json()
+    assert s["has_photo"] and s["total"] == 0
+    # a saree added afterwards is draped straight away with that photo
+    client.post(f"/api/sessions/{sess['id']}/items", json={"barcode": "A1"})
+    assert wait_for(client, sess["id"], lambda s: s["done"] == 1)["status"] == "ready"

@@ -222,7 +222,8 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
             if (state.scanned.isEmpty()) {
                 item {
                     Text(
-                        "Scan the tag on each saree the customer wants to try. They'll show up here.",
+                        "Scan the tag on each saree the customer wants to try. They'll show up here. " +
+                            "Or skip scanning: create the QR code now and the customer chooses sarees on the mirror.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -247,10 +248,11 @@ fun ScanScreen(vm: StaffViewModel, onBack: () -> Unit, onSessionReady: (String) 
                     BigButton(
                         text = when {
                             state.busy -> "Creating QR code…"
+                            state.scanned.isEmpty() -> "Create QR code to choose on the mirror"
                             state.scanned.size == 1 -> "Create QR code for 1 saree"
                             else -> "Create QR code for ${state.scanned.size} sarees"
                         },
-                        enabled = state.scanned.isNotEmpty() && !state.busy,
+                        enabled = !state.busy,
                         onClick = { vm.createSession(onSessionReady) },
                         modifier = Modifier.fillMaxWidth(),
                     )

@@ -22,6 +22,8 @@ the ones marked ✓ on every push.
 - ✓ Privacy line: the photo is only used for these sarees and deleted at the end
 
 **Who and drape**
+- ✓ A QR with no sarees (staff skipped scanning): "Choose your sarees" from the collection first; Take my photo waits until at least one is chosen
+- "Add more" tile after the sarees she picked
 - ✓ "Namaste, <name>" (skipped for token numbers), the sarees she picked
 - ✓ Me, or Someone else (gift)
 - ✓ Drape style: Nivi, Bengali, Gujarati, Nauvari, Modern, each with a one-line description
@@ -57,7 +59,7 @@ the ones marked ✓ on every push.
 
 ## Staff phone
 - ✓ Home: Scan a new customer, today's customers (code, name, status, liked sarees), pull to refresh, AI engine warnings, settings
-- ✓ Scan: barcode camera with torch, typed barcode, customer name (camera folds away while typing), list with remove, total price, Create QR code
+- ✓ Scan: barcode camera with torch, typed barcode, customer name (camera folds away while typing), list with remove, total price, Create QR code (or, with nothing scanned, Create QR code to choose on the mirror)
 - ✓ Customer: QR code + 6-letter code, each look's status and drape, liked sarees, Scan more (add sarees mid-session), Add photo (gift), New customer
 - ✓ Setup: server address, store key, staff or mirror mode, connection check
 

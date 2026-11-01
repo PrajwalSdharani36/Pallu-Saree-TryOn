@@ -131,6 +131,13 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
             goTo = null
         }
     }
+    // a "choose on the mirror" customer who has no sarees yet goes straight to the collection
+    LaunchedEffect(Unit) {
+        if (items.isEmpty()) {
+            vm.loadCatalog()
+            sheet = ResultsSheet.More
+        }
+    }
     val current = items.getOrNull(pager.currentPage.coerceAtMost(items.lastIndex))
     val go: (Int) -> Unit = { i -> scope.launch { pager.animateScrollToPage(i.coerceIn(0, (items.size - 1).coerceAtLeast(0))) } }
 
@@ -157,6 +164,15 @@ fun ResultsScreen(vm: KioskViewModel, onRetake: () -> Unit, onFinished: () -> Un
 
                 val gallery: @Composable (Modifier) -> Unit = { m ->
                     Box(m) {
+                        if (items.isEmpty()) {
+                            GlassPanel(Modifier.align(Alignment.Center).padding(horizontal = KioskSide).widthIn(max = 560.dp)) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                                    Text("Choose your sarees", fontFamily = Rozha, fontSize = 38.sp, lineHeight = 44.sp, color = OnMirror, textAlign = TextAlign.Center)
+                                    Muted("Pick from our collection and each one appears here on you.", align = TextAlign.Center)
+                                    GoldButton("Choose from our collection", { vm.loadCatalog(); sheet = ResultsSheet.More }, icon = Icons.Filled.Add)
+                                }
+                            }
+                        }
                         HorizontalPager(
                             state = pager,
                             modifier = Modifier.fillMaxSize(),
@@ -255,6 +271,7 @@ private const val MAX_SAREES = 12
 private enum class ResultsSheet { More, Done }
 
 private fun statusLine(s: TryOnSession): String = when {
+    s.total == 0 -> "No sarees chosen yet"
     s.total == 1 && s.done == 1 -> "Your look is ready"
     s.done == s.total -> "All ${s.total} are ready"
     else -> "${s.done} of ${s.total} ready"

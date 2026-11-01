@@ -86,9 +86,8 @@ def check_drape(style: str) -> str:
 @router.post("/api/sessions", response_model=SessionOut, status_code=201)
 def create_session(body: SessionCreate, db: Session = Depends(get_db)):
     s = get_settings()
+    # No sarees is fine: the QR is the customer's ticket, and she can choose sarees on the mirror.
     sarees = resolve_sarees(db, body.barcodes, body.saree_ids)
-    if not sarees:
-        raise HTTPException(422, "Scan at least one saree")
     if len(sarees) > s.max_sarees_per_session:
         raise HTTPException(422, f"At most {s.max_sarees_per_session} sarees per session")
     sess = TryOnSession(

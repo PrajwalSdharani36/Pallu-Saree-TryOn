@@ -111,7 +111,7 @@ class StaffViewModel(private val container: AppContainer) : ViewModel() {
 
     fun createSession(onReady: (String) -> Unit) = viewModelScope.launch {
         val st = _state.value
-        if (st.scanned.isEmpty() || st.busy) return@launch
+        if (st.busy) return@launch // no sarees is fine: the customer can choose them on the mirror
         _state.update { it.copy(busy = true, error = null) }
         val repo = container.repository()
         runCatching {
